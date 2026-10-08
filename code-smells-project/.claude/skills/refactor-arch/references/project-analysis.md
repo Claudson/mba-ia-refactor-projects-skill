@@ -84,6 +84,10 @@ subclasses, ORM model definitions, or migration files. Note where the schema is 
 - Entry point: `if __name__ == "__main__"` / `app.run(`, `package.json` `main`/`scripts.start`,
   `app.listen(`, `main()` in Go/Java. Record port and host.
 - How to run: project README first, then manifest scripts.
+- **Interpreter / dependencies:** if a local virtualenv exists (`venv/`, `.venv/`), run with its
+  interpreter (`venv/Scripts/python` on Windows, `venv/bin/python` elsewhere); for Node, run
+  `npm install` only if `node_modules/` is missing. If dependencies are missing, install them from
+  the manifest before the baseline — never into the global interpreter without asking.
 - **Runtime state** (needed for Phase 3 baseline): identify DB files and seed scripts.
   - A DB file that is **git-ignored** and **recreated automatically** (schema + seed on boot, or
     by a documented seed script) is throwaway dev state: it may be deleted before each validation
