@@ -1,0 +1,9 @@
+POST   /api/checkout                                                          -> 200  {"msg": "Sucesso", "enrollment_id": 2}
+POST   /api/checkout                                                          -> 400  Pagamento recusado
+POST   /api/checkout                                                          -> 200  {"msg": "Sucesso", "enrollment_id": 3}
+POST   /api/checkout                                                          -> 404  Curso não encontrado
+POST   /api/checkout                                                          -> 400  Bad Request
+GET    /api/admin/financial-report                                            -> 200  [{"course": "Clean Architecture", "revenue": 997, "students": [{"student": "Leonan", "paid
+DELETE /api/users/1                                                           -> 200  Usuário deletado, mas as matrículas e pagamentos ficaram sujos no banco.
+
+7 requests | 0 falhas (sem resposta ou 5xx)

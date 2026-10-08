@@ -1,0 +1,31 @@
+GET    /                                                                      -> 200  {"message": "Task Manager API", "version": "1.0"}
+GET    /health                                                                -> 200  {"status": "ok", "timestamp": "2026-10-08 14:49:43.312054"}
+GET    /tasks                                                                 -> 200  [{"category_id": 1, "category_name": "Backend", "created_at": "2026-10-08 17:49:37.378043"
+GET    /tasks/1                                                               -> 200  {"category_id": 1, "created_at": "2026-10-08 17:49:37.378043", "description": "Adicionar a
+GET    /tasks/9999                                                            -> 404  {"error": "Task não encontrada"}
+GET    /tasks/search?q=login                                                  -> 200  [{"category_id": 2, "created_at": "2026-10-08 17:49:37.378043", "description": "Tela de lo
+GET    /tasks/search?status=pending&priority=1                                -> 200  [{"category_id": 1, "created_at": "2026-10-08 17:49:37.378043", "description": "Adicionar 
+GET    /tasks/stats                                                           -> 200  {"cancelled": 1, "completion_rate": 10.0, "done": 1, "in_progress": 2, "overdue": 2, "pend
+POST   /tasks                                                                 -> 201  {"category_id": 1, "created_at": "2026-10-08 17:49:57.830950", "description": "desc", "due
+POST   /tasks                                                                 -> 400  {"error": "Título muito curto"}
+PUT    /tasks/1                                                               -> 200  {"category_id": 1, "created_at": "2026-10-08 17:49:37.378043", "description": "Adicionar a
+PUT    /tasks/1                                                               -> 400  {"error": "Status inválido"}
+DELETE /tasks/11                                                              -> 200  {"message": "Task deletada com sucesso"}
+GET    /users                                                                 -> 200  [{"active": true, "created_at": "2026-10-08 17:49:37.358380", "email": "joao@email.com", "
+GET    /users/1                                                               -> 200  {"active": true, "created_at": "2026-10-08 17:49:37.358380", "email": "joao@email.com", "i
+GET    /users/9999                                                            -> 404  {"error": "Usuário não encontrado"}
+POST   /users                                                                 -> 201  {"active": true, "created_at": "2026-10-08 17:50:14.326021", "email": "novo@email.com", "i
+POST   /users                                                                 -> 409  {"error": "Email já cadastrado"}
+PUT    /users/2                                                               -> 200  {"active": true, "created_at": "2026-10-08 17:49:37.358380", "email": "maria@email.com", "
+GET    /users/1/tasks                                                         -> 200  [{"created_at": "2026-10-08 17:49:37.378043", "description": "Adicionar autenticação real 
+POST   /login                                                                 -> 200  {"message": "Login realizado com sucesso", "token": "fake-jwt-token-1", "user": {"active":
+POST   /login                                                                 -> 401  {"error": "Credenciais inválidas"}
+GET    /reports/summary                                                       -> 200  {"generated_at": "2026-10-08 17:50:26.695244", "overdue": {"count": 2, "tasks": [{"days_ov
+GET    /reports/user/1                                                        -> 200  {"statistics": {"cancelled": 0, "completion_rate": 0.0, "done": 0, "high_priority": 2, "in
+GET    /categories                                                            -> 200  [{"color": "#3498db", "created_at": "2026-10-08 17:49:37.358380", "description": "Tarefas 
+POST   /categories                                                            -> 201  {"color": "#123456", "created_at": "2026-10-08 17:50:32.836076", "description": "Documenta
+PUT    /categories/5                                                          -> 200  {"color": "#123456", "created_at": "2026-10-08 17:50:32.836076", "description": "Documenta
+DELETE /categories/5                                                          -> 200  {"message": "Categoria deletada"}
+DELETE /users/4                                                               -> 200  {"message": "Usuário deletado com sucesso"}
+
+29 requests | 0 falhas (sem resposta ou 5xx)

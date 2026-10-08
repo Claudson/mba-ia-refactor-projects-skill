@@ -1,0 +1,28 @@
+GET    /                                                                      -> 200  {"endpoints": {"health": "/health", "login": "/login", "pedidos": "/pedidos", "produtos": 
+GET    /health                                                                -> 200  {"ambiente": "producao", "counts": {"pedidos": 0, "produtos": 10, "usuarios": 3}, "databas
+GET    /produtos                                                              -> 200  {"dados": [{"ativo": 1, "categoria": "informatica", "criado_em": "2026-10-08 17:48:33", "d
+GET    /produtos/1                                                            -> 200  {"dados": {"ativo": 1, "categoria": "informatica", "criado_em": "2026-10-08 17:48:33", "de
+GET    /produtos/9999                                                         -> 404  {"erro": "Produto não encontrado", "sucesso": false}
+GET    /produtos/busca?q=mouse                                                -> 200  {"dados": [{"ativo": 1, "categoria": "informatica", "criado_em": "2026-10-08 17:48:33", "d
+GET    /produtos/busca?categoria=informatica&preco_min=100&preco_max=500      -> 200  {"dados": [{"ativo": 1, "categoria": "informatica", "criado_em": "2026-10-08 17:48:33", "d
+POST   /produtos                                                              -> 201  {"dados": {"id": 11}, "mensagem": "Produto criado", "sucesso": true}
+POST   /produtos                                                              -> 400  {"erro": "Preço é obrigatório"}
+PUT    /produtos/1                                                            -> 200  {"mensagem": "Produto atualizado", "sucesso": true}
+DELETE /produtos/11                                                           -> 200  {"mensagem": "Produto deletado", "sucesso": true}
+GET    /usuarios                                                              -> 200  {"dados": [{"criado_em": "2026-10-08 17:48:33", "email": "admin@loja.com", "id": 1, "nome"
+GET    /usuarios/1                                                            -> 200  {"dados": {"criado_em": "2026-10-08 17:48:33", "email": "admin@loja.com", "id": 1, "nome":
+GET    /usuarios/9999                                                         -> 404  {"erro": "Usuário não encontrado"}
+POST   /usuarios                                                              -> 201  {"dados": {"id": 4}, "sucesso": true}
+POST   /login                                                                 -> 200  {"dados": {"email": "joao@email.com", "id": 2, "nome": "João Silva", "tipo": "cliente"}, "
+POST   /login                                                                 -> 401  {"erro": "Email ou senha inválidos", "sucesso": false}
+POST   /pedidos                                                               -> 201  {"dados": {"pedido_id": 1, "total": 689.6999999999999}, "mensagem": "Pedido criado com suc
+POST   /pedidos                                                               -> 400  {"erro": "Produto 9999 não encontrado", "sucesso": false}
+GET    /pedidos                                                               -> 200  {"dados": [{"criado_em": "2026-10-08 17:49:10", "id": 1, "itens": [{"preco_unitario": 89.9
+GET    /pedidos/usuario/2                                                     -> 200  {"dados": [{"criado_em": "2026-10-08 17:49:10", "id": 1, "itens": [{"preco_unitario": 89.9
+PUT    /pedidos/1/status                                                      -> 200  {"mensagem": "Status atualizado", "sucesso": true}
+PUT    /pedidos/1/status                                                      -> 400  {"erro": "Status inválido"}
+GET    /relatorios/vendas                                                     -> 200  {"dados": {"desconto_aplicavel": 0, "faturamento_bruto": 689.7, "faturamento_liquido": 689
+POST   /admin/query                                                           -> 200  {"dados": [{"total": 10}], "sucesso": true}
+POST   /admin/reset-db                                                        -> 200  {"mensagem": "Banco de dados resetado", "sucesso": true}
+
+26 requests | 0 falhas (sem resposta ou 5xx)

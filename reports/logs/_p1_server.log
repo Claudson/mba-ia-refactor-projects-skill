@@ -1,0 +1,98 @@
+==================================================
+SERVIDOR INICIADO
+Rodando em http://localhost:5000
+==================================================
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.15.2:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 135-894-358
+127.0.0.1 - - [08/Oct/2026 14:44:12] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:15] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:17] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:19] "GET /produtos HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:21] "GET /produtos/1 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:23] "GET /produtos/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:44:25] "GET /produtos/busca?q=mouse HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:27] "GET /produtos/busca?categoria=informatica&preco_min=100&preco_max=500 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:29] "POST /produtos HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 14:44:31] "POST /produtos HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:44:33] "PUT /produtos/1 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:35] "DELETE /produtos/11 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:37] "GET /usuarios HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:40] "GET /usuarios/1 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:42] "GET /usuarios/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:44:44] "POST /usuarios HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 14:44:46] "POST /login HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:48] "POST /login HTTP/1.1" 401 -
+127.0.0.1 - - [08/Oct/2026 14:44:50] "POST /pedidos HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 14:44:52] "POST /pedidos HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:44:54] "GET /pedidos HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:56] "GET /pedidos/usuario/2 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:44:58] "PUT /pedidos/1/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:45:00] "PUT /pedidos/1/status HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:45:02] "GET /relatorios/vendas HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:45:04] "POST /admin/query HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:45:06] "POST /admin/reset-db HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:13] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:15] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:17] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:19] "GET /produtos HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:22] "GET /produtos/1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:46:24] "GET /produtos/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:46:26] "GET /produtos/busca?q=mouse HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:28] "GET /produtos/busca?categoria=informatica&preco_min=100&preco_max=500 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:30] "POST /produtos HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 14:46:32] "POST /produtos HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:46:34] "PUT /produtos/1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:46:36] "DELETE /produtos/11 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:46:38] "GET /usuarios HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:40] "GET /usuarios/1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:46:42] "GET /usuarios/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:46:44] "POST /usuarios HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 14:46:46] "POST /login HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:48] "POST /login HTTP/1.1" 401 -
+127.0.0.1 - - [08/Oct/2026 14:46:50] "POST /pedidos HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:46:52] "POST /pedidos HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:46:55] "GET /pedidos HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:57] "GET /pedidos/usuario/2 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:46:59] "PUT /pedidos/1/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:47:01] "PUT /pedidos/1/status HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:47:03] "GET /relatorios/vendas HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:47:05] "POST /admin/query HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:47:07] "POST /admin/reset-db HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:47:10] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:47:12] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:47:14] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 14:47:16] "GET /tasks HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:18] "GET /tasks/1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:20] "GET /tasks/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:22] "GET /tasks/search?q=login HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:24] "GET /tasks/search?status=pending&priority=1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:27] "GET /tasks/stats HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:29] "POST /tasks HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:31] "POST /tasks HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:33] "PUT /tasks/1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:35] "PUT /tasks/1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:37] "DELETE /tasks/11 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:39] "GET /users HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:41] "GET /users/1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:43] "GET /users/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:45] "POST /users HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:47] "POST /users HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:49] "PUT /users/2 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:51] "GET /users/1/tasks HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:53] "POST /login HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:47:55] "POST /login HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 14:47:57] "GET /reports/summary HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:47:59] "GET /reports/user/1 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:48:02] "GET /categories HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:48:04] "POST /categories HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:48:06] "PUT /categories/5 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:48:08] "DELETE /categories/5 HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 14:48:10] "DELETE /users/4 HTTP/1.1" 404 -
