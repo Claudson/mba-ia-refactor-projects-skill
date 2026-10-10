@@ -1,0 +1,81 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/checkout",
+    "body": {
+      "usr": "Guilherme",
+      "eml": "gui@fullcycle.com.br",
+      "pwd": "senhaforte",
+      "c_id": 2,
+      "card": "4111222233334444"
+    },
+    "status": 200,
+    "response": {
+      "msg": "Sucesso",
+      "enrollment_id": 2
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/checkout",
+    "body": {
+      "usr": "João",
+      "eml": "joao@teste.com",
+      "pwd": "123",
+      "c_id": 1,
+      "card": "5111222233334444"
+    },
+    "status": 400,
+    "response": "Pagamento recusado"
+  },
+  {
+    "method": "POST",
+    "path": "/api/checkout",
+    "body": {
+      "usr": "Leonan",
+      "eml": "leonan@fullcycle.com.br",
+      "c_id": 2,
+      "card": "4111000011112222"
+    },
+    "status": 200,
+    "response": {
+      "msg": "Sucesso",
+      "enrollment_id": 3
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/checkout",
+    "body": {
+      "usr": "Sem curso",
+      "eml": "x@x.com",
+      "c_id": 999,
+      "card": "4111"
+    },
+    "status": 404,
+    "response": "Curso não encontrado"
+  },
+  {
+    "method": "POST",
+    "path": "/api/checkout",
+    "body": {
+      "usr": "Incompleto"
+    },
+    "status": 400,
+    "response": "Bad Request"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/financial-report",
+    "body": null,
+    "status": 403,
+    "response": "Endpoint administrativo desabilitado"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/users/1",
+    "body": null,
+    "status": 403,
+    "response": "Endpoint administrativo desabilitado"
+  }
+]

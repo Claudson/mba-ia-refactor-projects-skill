@@ -1,0 +1,5 @@
+2026-10-10T17:49:28.145Z [WARN] PAYMENT_GATEWAY_KEY não definida; gateway de pagamento em modo simulado
+2026-10-10T17:49:28.159Z [INFO] LMS API rodando na porta 3000
+2026-10-10T17:49:28.587Z [INFO] Processando pagamento de 497 no cartão **** 4444
+2026-10-10T17:49:28.644Z [INFO] Processando pagamento de 997 no cartão **** 4444
+2026-10-10T17:49:28.663Z [INFO] Processando pagamento de 497 no cartão **** 2222
