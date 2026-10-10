@@ -1,7 +1,7 @@
 """Smoke test sem dependências: chama todos os endpoints de um projeto e registra status + corpo.
 
 Uso:
-    python scripts/smoke_test.py <projeto> [--base-url URL] [--out arquivo.json]
+    python scripts/smoke_test.py <projeto> [--base-url URL] [--out arquivo.json] [--header 'Nome: valor']
 
 Projetos: code-smells-project | ecommerce-api-legacy | task-manager-api
 A saída JSON permite comparar o comportamento antes/depois da refatoração (ver compare).
@@ -93,9 +93,9 @@ SUITES = {
 }
 
 
-def call(base_url, method, path, body):
+def call(base_url, method, path, body, headers=None):
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(base_url + path, data=data, method=method)
+    req = urllib.request.Request(base_url + path, data=data, method=method, headers=headers or {})
     if data is not None:
         req.add_header("Content-Type", "application/json")
     try:
@@ -117,14 +117,18 @@ def main():
     parser.add_argument("project", choices=SUITES)
     parser.add_argument("--base-url")
     parser.add_argument("--out")
+    parser.add_argument("--header", action="append", default=[], metavar="'Nome: valor'",
+                        help="header extra em todas as requisições (ex.: 'X-Admin-Token: abc')")
     args = parser.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")
 
     suite = SUITES[args.project]
     base_url = args.base_url or suite["base_url"]
+    headers = dict(h.split(":", 1) for h in args.header)
+    headers = {k.strip(): v.strip() for k, v in headers.items()}
     results, failures = [], 0
     for method, path, body in suite["requests"]:
-        status, payload = call(base_url, method, path, body)
+        status, payload = call(base_url, method, path, body, headers)
         if status is None or status >= 500:
             failures += 1
         preview = json.dumps(payload, ensure_ascii=False) if not isinstance(payload, str) else payload
