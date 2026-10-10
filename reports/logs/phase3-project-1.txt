@@ -1,0 +1,128 @@
+================================
+PHASE 3: REFACTORING COMPLETE
+================================
+
+Strategy
+
+Extração completa de monolito — a Fase 1 classificou o projeto como monolítico/sem camadas (models.py concentrava SQL, regra de negócio e serialização dos três domínios), então não havia estrutura aproveitável: cada função foi movida para a camada correta e os três arquivos originais foram apagados.
+
+New Project Structure
+
+app.py                                  entry point: carrega settings e sobe o servidor
+.env.example                            todas as variáveis de configuração, sem segredos reais
+src/app.py                              composition root: create_app() conecta config, banco, services, controllers, views
+src/logger.py                           configuração única de logging (substitui os prints)
+src/database.py                         conexão por requisição (flask.g), schema com FKs, PRAGMA foreign_keys, seed com hash
+src/config/settings.py                  settings por variável de ambiente, defaults seguros
+src/models/produto_model.py             SQL parametrizado de produto + constantes de domínio + serializer
+src/models/usuario_model.py             SQL parametrizado de usuário + hash/verificação de senha + serializer sem `senha`
+src/models/pedido_model.py              SQL parametrizado de pedido, listagem por JOIN único, GROUP BY do relatório, faixas de desconto
+src/models/manutencao_model.py          operações de manutenção: limpeza transacional e consulta somente leitura
+src/services/pedido_service.py          regra de pedido (estoque, total, transação) e cálculo do relatório
+src/services/notification_service.py    notificações de pedido, fora do controller
+src/validators/produto_validator.py     validação de payload e filtros de produto (fonte única criar/atualizar)
+src/validators/usuario_validator.py     validação de cadastro e login
+src/validators/pedido_validator.py      validação de pedido, itens e status
+src/controllers/produto_controller.py   casos de uso de produto, sem conhecer HTTP
+src/controllers/usuario_controller.py   casos de uso de usuário e autenticação
+src/controllers/pedido_controller.py    casos de uso de pedido, delegando ao service
+src/controllers/relatorio_controller.py caso de uso de relatório de vendas
+src/controllers/sistema_controller.py   índice da API e health check (só status e contagens)
+src/controllers/admin_controller.py     casos de uso administrativos (reset e consulta somente leitura)
+src/views/produto_routes.py             blueprint das 6 rotas de produto
+src/views/usuario_routes.py             blueprint das 4 rotas de usuário/login
+src/views/pedido_routes.py              blueprint das 4 rotas de pedido
+src/views/relatorio_routes.py           blueprint de /relatorios/vendas
+src/views/sistema_routes.py             blueprint de / e /health
+src/views/admin_routes.py               blueprint de /admin/*, com guard de admin
+src/middlewares/error_handler.py        AppError + hierarquia de exceções + handler central (404/405 em JSON)
+src/middlewares/auth.py                 guard require_admin (header X-Admin-Token, comparação constante)
+
+Apagados: models.py, controllers.py, database.py (conteúdo movido, sem duplicatas).
+
+Findings Resolved
+
+- F01 / Segredo hardcoded → SECRET_KEY sai do código para os.environ; ausente, gera chave efêmera com warning; /health não devolve mais a chave.
+- F02 / SQL Injection → todas as queries parametrizadas (? + tupla); busca dinâmica monta lista de cláusulas fixas + lista de parâmetros.
+- F03 / Senhas em texto puro → generate_password_hash/check_password_hash na criação, no login e no seed; o SQL só busca por email.
+- F04 / Exposição de dados → serializers com CAMPOS_PUBLICOS (sem senha), /health só com status/contagens, str(e) substituído por mensagem genérica + log no servidor.
+- F05 / Endpoints admin abertos → guard require_admin (X-Admin-Token, hmac.compare_digest); sem ADMIN_TOKEN configurado os endpoints ficam desabilitados (403); /admin/query só aceita um SELECT, em conexão mode=ro.
+- F06 / Debug e CORS → DEBUG, HOST, PORT e CORS_ORIGINS vêm do ambiente, com debug desligado, bind em 127.0.0.1 e CORS desabilitado por padrão.
+- F07 / God Module → models.py dividido em 4 models por agregado + 2 services + 6 controllers + 6 blueprints; database.py dividido em conexão/schema/seed.
+- F08 / Fat controllers → validações nos validators, regras de pedido/relatório no service, notificações no notification_service; handlers de rota com 2–5 linhas.
+- F09 / Sem DI → models recebem a conexão por parâmetro; controllers e services recebem suas dependências do composition root.
+- F10 / Estado global → conexão por requisição em flask.g com teardown_appcontext; sem global, sem check_same_thread=False.
+- F11 / Escrita não atômica → criação de pedido dentro de with conn: (commit/rollback atômico) e baixa de estoque condicional (WHERE estoque >= ?) contra corrida.
+- F12 / N+1 → listagem de pedidos em uma query com LEFT JOIN e agrupamento em memória; relatório em um GROUP BY; produtos do pedido em um IN (...); health em 3 contagens diretas.
+- F13 / Duplicação → um serializer por entidade, um validador compartilhado por criar/atualizar, listagem de pedidos parametrizada pelo filtro.
+- F14 / Validação fraca → tipo/faixa/forma validados na borda; corpo ausente, preço não numérico, item malformado, quantidade ≤ 0, usuario_id inexistente e email duplicado passam a devolver 400/404 em vez de 500 ou corrupção silenciosa.
+- F15 / Erros → hierarquia AppError/ValidationError/NotFoundError/BusinessRuleError/ConflictError/Unauthorized/Forbidden + @app.errorhandler central; 404/405 do Flask agora em JSON.
+- F16 / Integridade referencial → FKs declaradas (ON DELETE RESTRICT / CASCADE), PRAGMA foreign_keys = ON em toda conexão, exclusão de produto com pedidos bloqueada, reset em transação única na ordem das FKs.
+- F17 / print → módulo logging com nível por ambiente; emails removidos das mensagens de log.
+- F18 / Magic numbers → FAIXAS_DESCONTO, STATUS_VALIDOS, CATEGORIAS_VALIDAS, NOME_MIN/MAX_TAMANHO nos models; versão e porta na config.
+- F19 / Nomenclatura → id → produto_id/usuario_id/pedido_id; cursor2/cursor3 eliminados junto com o N+1.
+- F20 / Imports não usados → arquivos antigos apagados; nenhum import morto nos novos módulos.
+- F21 / Condicionais → if not itens:, early return sem else, filtros numéricos comparados com is not None (agora preco_min=0 filtra).
+
+Nenhum finding ficou sem resolução.
+
+Intentional Contract Changes
+
+| Endpoint | Mudança | Motivo |
+|---|---|---|
+| GET /health | Removidos secret_key, db_path, debug, ambiente; mantidos status, database, counts, versao | F01/F04 — vazava a chave de assinatura e a configuração interna |
+| GET /usuarios, GET /usuarios/<id> | Campo senha removido dos itens | F04 — dump de credenciais sem autenticação |
+| POST /admin/reset-db, POST /admin/query | Exigem header X-Admin-Token; sem ADMIN_TOKEN configurado → 403, token errado → 401 | F05 — endpoints destrutivos abertos |
+| POST /admin/query | Só um SELECT, em conexão somente leitura; não-SELECT → 403, múltiplos comandos → 400 | F05 — execução de SQL arbitrário |
+| Erros 500 | Corpo passa de {"erro": str(e)} para {"erro": "Erro interno do servidor"}; detalhe só no log | F04 — vazava schema e queries |
+| GET /health com banco indisponível | detalhes passa de str(e) para mensagem fixa (chaves status/detalhes mantidas) | F04 |
+| Rotas/métodos inexistentes | 404/405 em JSON em vez de HTML do Flask | F15 — API JSON |
+| Entradas inválidas que davam 500 | 400/404 adequados (corpo ausente, preço não numérico, preco_min inválido, item sem produto_id, quantidade ≤ 0) | F14 |
+| POST /pedidos | usuario_id inexistente → 400 (antes criava pedido órfão); quantidade negativa → 400 (antes aumentava o estoque) | F14/F16 |
+| POST /usuarios | Email duplicado → 400 {"erro": "Email já cadastrado"} (antes 201) | F14 — login ambíguo |
+| PUT /pedidos/<id>/status | Pedido inexistente → 404 (antes 200 sem efeito) | F14 |
+| PUT /produtos/<id> | Passa a aplicar também as validações de tamanho de nome e categoria que só o POST tinha | F08 — PUT aceitava dados que o POST rejeitava |
+| DELETE /produtos/<id> | Produto referenciado por pedidos → 409 (antes 200, deixando histórico órfão) | F16 |
+| app.run | Bind padrão 127.0.0.1 e debug desligado (configuráveis) | F06 |
+| CORS | Desabilitado por padrão, habilitado por CORS_ORIGINS | F06 |
+| Login com loja.db antigo | Senhas em texto puro do banco anterior não autenticam; apagar loja.db recria o seed com hash | F03 (documentado no README) |
+
+Validation
+
+  ✓ Application boots without errors (python app.py — 0 tracebacks, 0 respostas 500 nos logs)
+  ✓ All endpoints respond (30/30 chamadas; 29/30 com status e chaves idênticos ao baseline)
+  ✓ No CRITICAL/HIGH anti-patterns remaining
+
+| MÉTODO PATH | antes | depois |
+|---|---|---|
+| GET / | 200 endpoints,mensagem,versao | 200 endpoints,mensagem,versao |
+| GET /health | 200 ambiente,counts,database,db_path,debug,secret_key,status,versao | 200 counts,database,status,versao ← mudança intencional |
+| GET /produtos | 200 dados,sucesso | 200 dados,sucesso |
+| GET /produtos/busca?q=Mouse | 200 dados,sucesso,total | 200 dados,sucesso,total |
+| GET /produtos/busca (4 filtros) | 200 dados,sucesso,total | 200 dados,sucesso,total |
+| POST /produtos | 201 dados,mensagem,sucesso | 201 dados,mensagem,sucesso |
+| POST /produtos (inválido) | 400 erro | 400 erro |
+| GET /produtos/<id> | 200 dados,sucesso | 200 dados,sucesso |
+| GET /produtos/<inexistente> | 404 erro,sucesso | 404 erro,sucesso |
+| PUT /produtos/<id> | 200 mensagem,sucesso | 200 mensagem,sucesso |
+| PUT /produtos/<id> (inválido) | 400 erro | 400 erro |
+| POST /usuarios | 201 dados,sucesso | 201 dados,sucesso |
+| POST /usuarios (inválido) | 400 erro | 400 erro |
+| GET /usuarios | 200 dados,sucesso | 200 dados,sucesso (sem senha nos itens) |
+| GET /usuarios/<id> | 200 dados,sucesso | 200 dados,sucesso |
+| GET /usuarios/<inexistente> | 404 erro | 404 erro |
+| POST /login | 200 dados,mensagem,sucesso | 200 dados,mensagem,sucesso |
+| POST /login (inválido) | 401 erro,sucesso | 401 erro,sucesso |
+| POST /pedidos | 201 dados,mensagem,sucesso | 201 dados,mensagem,sucesso |
+| POST /pedidos (inválido) | 400 erro | 400 erro |
+| GET /pedidos | 200 dados,sucesso | 200 dados,sucesso |
+| GET /pedidos/usuario/<id> | 200 dados,sucesso | 200 dados,sucesso |
+| PUT /pedidos/<id>/status | 200 mensagem,sucesso | 200 mensagem,sucesso |
+| PUT /pedidos/<id>/status (inválido) | 400 erro | 400 erro |
+| GET /relatorios/vendas | 200 dados,sucesso | 200 dados,sucesso |
+| DELETE /produtos/<id> | 200 mensagem,sucesso | 200 mensagem,sucesso |
+| DELETE /produtos/<inexistente> | 404 erro | 404 erro |
+| POST /admin/query (SELECT, autorizado) | 200 dados,sucesso | 200 dados,sucesso |
+| POST /admin/query (sem sql) | 400 erro | 400 erro |
+| POST /admin/reset-db (autorizado) | 200 mensagem,sucesso | 200 mensagem,sucesso |
+================================
