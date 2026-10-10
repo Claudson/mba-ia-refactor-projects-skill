@@ -1,0 +1,824 @@
+[
+  {
+    "method": "GET",
+    "path": "/",
+    "body": null,
+    "status": 200,
+    "response": {
+      "message": "Task Manager API",
+      "version": "1.0"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "body": null,
+    "status": 200,
+    "response": {
+      "status": "ok",
+      "timestamp": "2026-10-10 15:09:04.768231"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/tasks",
+    "body": null,
+    "status": 200,
+    "response": [
+      {
+        "category_id": 1,
+        "category_name": "Backend",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Adicionar autenticação real com JWT",
+        "due_date": "2026-10-07 18:08:46.791436",
+        "id": 1,
+        "overdue": true,
+        "priority": 1,
+        "status": "pending",
+        "tags": [],
+        "title": "Implementar autenticação JWT",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 1,
+        "user_name": "João Silva"
+      },
+      {
+        "category_id": 2,
+        "category_name": "Frontend",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Tela de login responsiva",
+        "due_date": "2026-10-15 18:08:46.792312",
+        "id": 2,
+        "overdue": false,
+        "priority": 2,
+        "status": "in_progress",
+        "tags": [],
+        "title": "Criar tela de login",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 2,
+        "user_name": "Maria Santos"
+      },
+      {
+        "category_id": 3,
+        "category_name": "DevOps",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Pipeline com GitHub Actions",
+        "due_date": null,
+        "id": 3,
+        "overdue": false,
+        "priority": 2,
+        "status": "done",
+        "tags": [
+          "devops",
+          "ci",
+          "github"
+        ],
+        "title": "Configurar CI/CD",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 3,
+        "user_name": "Pedro Oliveira"
+      },
+      {
+        "category_id": 4,
+        "category_name": "Bug",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Filtro não funciona com caracteres especiais",
+        "due_date": "2026-10-09 18:08:46.793311",
+        "id": 4,
+        "overdue": true,
+        "priority": 1,
+        "status": "pending",
+        "tags": [],
+        "title": "Corrigir bug no filtro de busca",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 1,
+        "user_name": "João Silva"
+      },
+      {
+        "category_id": 1,
+        "category_name": "Backend",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Endpoints retornam todos os registros",
+        "due_date": "2026-10-20 18:08:46.793311",
+        "id": 5,
+        "overdue": false,
+        "priority": 3,
+        "status": "pending",
+        "tags": [],
+        "title": "Adicionar paginação na API",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 1,
+        "user_name": "João Silva"
+      },
+      {
+        "category_id": 1,
+        "category_name": "Backend",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Cobertura mínima de 80%",
+        "due_date": null,
+        "id": 6,
+        "overdue": false,
+        "priority": 2,
+        "status": "pending",
+        "tags": [],
+        "title": "Escrever testes unitários",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 2,
+        "user_name": "Maria Santos"
+      },
+      {
+        "category_id": 1,
+        "category_name": "Backend",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Gerar documentação automática",
+        "due_date": null,
+        "id": 7,
+        "overdue": false,
+        "priority": 4,
+        "status": "cancelled",
+        "tags": [],
+        "title": "Documentar API com Swagger",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 3,
+        "user_name": "Pedro Oliveira"
+      },
+      {
+        "category_id": 1,
+        "category_name": "Backend",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Melhorar organização dos models",
+        "due_date": null,
+        "id": 8,
+        "overdue": false,
+        "priority": 3,
+        "status": "in_progress",
+        "tags": [
+          "refactor",
+          "tech-debt"
+        ],
+        "title": "Refatorar models",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 2,
+        "user_name": "Maria Santos"
+      },
+      {
+        "category_id": 3,
+        "category_name": "DevOps",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Prometheus + Grafana",
+        "due_date": "2026-10-30 18:08:46.793311",
+        "id": 9,
+        "overdue": false,
+        "priority": 4,
+        "status": "pending",
+        "tags": [],
+        "title": "Configurar monitoramento",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 3,
+        "user_name": "Pedro Oliveira"
+      },
+      {
+        "category_id": 1,
+        "category_name": "Backend",
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Usar marshmallow ou pydantic",
+        "due_date": null,
+        "id": 10,
+        "overdue": false,
+        "priority": 3,
+        "status": "pending",
+        "tags": [
+          "improvement",
+          "validation"
+        ],
+        "title": "Melhorar validações de input",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 1,
+        "user_name": "João Silva"
+      }
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/tasks/1",
+    "body": null,
+    "status": 200,
+    "response": {
+      "category_id": 1,
+      "created_at": "2026-10-10 18:08:46.796314",
+      "description": "Adicionar autenticação real com JWT",
+      "due_date": "2026-10-07 18:08:46.791436",
+      "id": 1,
+      "overdue": true,
+      "priority": 1,
+      "status": "pending",
+      "tags": [],
+      "title": "Implementar autenticação JWT",
+      "updated_at": "2026-10-10 18:08:46.796314",
+      "user_id": 1
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/tasks/9999",
+    "body": null,
+    "status": 404,
+    "response": {
+      "error": "Task não encontrada"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/tasks/search?q=login",
+    "body": null,
+    "status": 200,
+    "response": [
+      {
+        "category_id": 2,
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Tela de login responsiva",
+        "due_date": "2026-10-15 18:08:46.792312",
+        "id": 2,
+        "priority": 2,
+        "status": "in_progress",
+        "tags": [],
+        "title": "Criar tela de login",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 2
+      }
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/tasks/search?status=pending&priority=1",
+    "body": null,
+    "status": 200,
+    "response": [
+      {
+        "category_id": 1,
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Adicionar autenticação real com JWT",
+        "due_date": "2026-10-07 18:08:46.791436",
+        "id": 1,
+        "priority": 1,
+        "status": "pending",
+        "tags": [],
+        "title": "Implementar autenticação JWT",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 1
+      },
+      {
+        "category_id": 4,
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Filtro não funciona com caracteres especiais",
+        "due_date": "2026-10-09 18:08:46.793311",
+        "id": 4,
+        "priority": 1,
+        "status": "pending",
+        "tags": [],
+        "title": "Corrigir bug no filtro de busca",
+        "updated_at": "2026-10-10 18:08:46.796314",
+        "user_id": 1
+      }
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/tasks/stats",
+    "body": null,
+    "status": 200,
+    "response": {
+      "cancelled": 1,
+      "completion_rate": 10.0,
+      "done": 1,
+      "in_progress": 2,
+      "overdue": 2,
+      "pending": 6,
+      "total": 10
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/tasks",
+    "body": {
+      "title": "Nova task",
+      "description": "desc",
+      "priority": 2,
+      "user_id": 1,
+      "category_id": 1,
+      "due_date": "2030-01-01",
+      "tags": [
+        "a",
+        "b"
+      ]
+    },
+    "status": 201,
+    "response": {
+      "category_id": 1,
+      "created_at": "2026-10-10 18:09:05.086170",
+      "description": "desc",
+      "due_date": "2030-01-01 00:00:00",
+      "id": 11,
+      "priority": 2,
+      "status": "pending",
+      "tags": [
+        "a",
+        "b"
+      ],
+      "title": "Nova task",
+      "updated_at": "2026-10-10 18:09:05.086170",
+      "user_id": 1
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/tasks",
+    "body": {
+      "title": "x"
+    },
+    "status": 400,
+    "response": {
+      "error": "Título muito curto"
+    }
+  },
+  {
+    "method": "PUT",
+    "path": "/tasks/1",
+    "body": {
+      "status": "in_progress",
+      "priority": 2
+    },
+    "status": 200,
+    "response": {
+      "category_id": 1,
+      "created_at": "2026-10-10 18:08:46.796314",
+      "description": "Adicionar autenticação real com JWT",
+      "due_date": "2026-10-07 18:08:46.791436",
+      "id": 1,
+      "priority": 2,
+      "status": "in_progress",
+      "tags": [],
+      "title": "Implementar autenticação JWT",
+      "updated_at": "2026-10-10 18:09:05.137808",
+      "user_id": 1
+    }
+  },
+  {
+    "method": "PUT",
+    "path": "/tasks/1",
+    "body": {
+      "status": "invalido"
+    },
+    "status": 400,
+    "response": {
+      "error": "Status inválido"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/tasks/11",
+    "body": null,
+    "status": 200,
+    "response": {
+      "message": "Task deletada com sucesso"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/users",
+    "body": null,
+    "status": 200,
+    "response": [
+      {
+        "active": true,
+        "created_at": "2026-10-10 18:08:46.770794",
+        "email": "joao@email.com",
+        "id": 1,
+        "name": "João Silva",
+        "role": "admin",
+        "task_count": 4
+      },
+      {
+        "active": true,
+        "created_at": "2026-10-10 18:08:46.770794",
+        "email": "maria@email.com",
+        "id": 2,
+        "name": "Maria Santos",
+        "role": "user",
+        "task_count": 3
+      },
+      {
+        "active": true,
+        "created_at": "2026-10-10 18:08:46.770794",
+        "email": "pedro@email.com",
+        "id": 3,
+        "name": "Pedro Oliveira",
+        "role": "manager",
+        "task_count": 3
+      }
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/users/1",
+    "body": null,
+    "status": 200,
+    "response": {
+      "active": true,
+      "created_at": "2026-10-10 18:08:46.770794",
+      "email": "joao@email.com",
+      "id": 1,
+      "name": "João Silva",
+      "password": "81dc9bdb52d04dc20036dbd8313ed055",
+      "role": "admin",
+      "tasks": [
+        {
+          "category_id": 1,
+          "created_at": "2026-10-10 18:08:46.796314",
+          "description": "Adicionar autenticação real com JWT",
+          "due_date": "2026-10-07 18:08:46.791436",
+          "id": 1,
+          "priority": 2,
+          "status": "in_progress",
+          "tags": [],
+          "title": "Implementar autenticação JWT",
+          "updated_at": "2026-10-10 18:09:05.137808",
+          "user_id": 1
+        },
+        {
+          "category_id": 4,
+          "created_at": "2026-10-10 18:08:46.796314",
+          "description": "Filtro não funciona com caracteres especiais",
+          "due_date": "2026-10-09 18:08:46.793311",
+          "id": 4,
+          "priority": 1,
+          "status": "pending",
+          "tags": [],
+          "title": "Corrigir bug no filtro de busca",
+          "updated_at": "2026-10-10 18:08:46.796314",
+          "user_id": 1
+        },
+        {
+          "category_id": 1,
+          "created_at": "2026-10-10 18:08:46.796314",
+          "description": "Endpoints retornam todos os registros",
+          "due_date": "2026-10-20 18:08:46.793311",
+          "id": 5,
+          "priority": 3,
+          "status": "pending",
+          "tags": [],
+          "title": "Adicionar paginação na API",
+          "updated_at": "2026-10-10 18:08:46.796314",
+          "user_id": 1
+        },
+        {
+          "category_id": 1,
+          "created_at": "2026-10-10 18:08:46.796314",
+          "description": "Usar marshmallow ou pydantic",
+          "due_date": null,
+          "id": 10,
+          "priority": 3,
+          "status": "pending",
+          "tags": [
+            "improvement",
+            "validation"
+          ],
+          "title": "Melhorar validações de input",
+          "updated_at": "2026-10-10 18:08:46.796314",
+          "user_id": 1
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/users/9999",
+    "body": null,
+    "status": 404,
+    "response": {
+      "error": "Usuário não encontrado"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/users",
+    "body": {
+      "name": "Novo",
+      "email": "novo@email.com",
+      "password": "1234",
+      "role": "user"
+    },
+    "status": 201,
+    "response": {
+      "active": true,
+      "created_at": "2026-10-10 18:09:05.264713",
+      "email": "novo@email.com",
+      "id": 4,
+      "name": "Novo",
+      "password": "81dc9bdb52d04dc20036dbd8313ed055",
+      "role": "user"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/users",
+    "body": {
+      "name": "Novo",
+      "email": "novo@email.com",
+      "password": "1234"
+    },
+    "status": 409,
+    "response": {
+      "error": "Email já cadastrado"
+    }
+  },
+  {
+    "method": "PUT",
+    "path": "/users/2",
+    "body": {
+      "name": "Maria Santos Silva"
+    },
+    "status": 200,
+    "response": {
+      "active": true,
+      "created_at": "2026-10-10 18:08:46.770794",
+      "email": "maria@email.com",
+      "id": 2,
+      "name": "Maria Santos Silva",
+      "password": "e2fc714c4727ee9395f324cd2e7f331f",
+      "role": "user"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/users/1/tasks",
+    "body": null,
+    "status": 200,
+    "response": [
+      {
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Adicionar autenticação real com JWT",
+        "due_date": "2026-10-07 18:08:46.791436",
+        "id": 1,
+        "overdue": true,
+        "priority": 2,
+        "status": "in_progress",
+        "title": "Implementar autenticação JWT"
+      },
+      {
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Filtro não funciona com caracteres especiais",
+        "due_date": "2026-10-09 18:08:46.793311",
+        "id": 4,
+        "overdue": true,
+        "priority": 1,
+        "status": "pending",
+        "title": "Corrigir bug no filtro de busca"
+      },
+      {
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Endpoints retornam todos os registros",
+        "due_date": "2026-10-20 18:08:46.793311",
+        "id": 5,
+        "overdue": false,
+        "priority": 3,
+        "status": "pending",
+        "title": "Adicionar paginação na API"
+      },
+      {
+        "created_at": "2026-10-10 18:08:46.796314",
+        "description": "Usar marshmallow ou pydantic",
+        "due_date": null,
+        "id": 10,
+        "overdue": false,
+        "priority": 3,
+        "status": "pending",
+        "title": "Melhorar validações de input"
+      }
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/login",
+    "body": {
+      "email": "joao@email.com",
+      "password": "1234"
+    },
+    "status": 200,
+    "response": {
+      "message": "Login realizado com sucesso",
+      "token": "fake-jwt-token-1",
+      "user": {
+        "active": true,
+        "created_at": "2026-10-10 18:08:46.770794",
+        "email": "joao@email.com",
+        "id": 1,
+        "name": "João Silva",
+        "password": "81dc9bdb52d04dc20036dbd8313ed055",
+        "role": "admin"
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/login",
+    "body": {
+      "email": "joao@email.com",
+      "password": "errada"
+    },
+    "status": 401,
+    "response": {
+      "error": "Credenciais inválidas"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/reports/summary",
+    "body": null,
+    "status": 200,
+    "response": {
+      "generated_at": "2026-10-10 18:09:05.404872",
+      "overdue": {
+        "count": 2,
+        "tasks": [
+          {
+            "days_overdue": 3,
+            "due_date": "2026-10-07 18:08:46.791436",
+            "id": 1,
+            "title": "Implementar autenticação JWT"
+          },
+          {
+            "days_overdue": 1,
+            "due_date": "2026-10-09 18:08:46.793311",
+            "id": 4,
+            "title": "Corrigir bug no filtro de busca"
+          }
+        ]
+      },
+      "overview": {
+        "total_categories": 4,
+        "total_tasks": 10,
+        "total_users": 4
+      },
+      "recent_activity": {
+        "tasks_completed_last_7_days": 1,
+        "tasks_created_last_7_days": 10
+      },
+      "tasks_by_priority": {
+        "critical": 1,
+        "high": 4,
+        "low": 2,
+        "medium": 3,
+        "minimal": 0
+      },
+      "tasks_by_status": {
+        "cancelled": 1,
+        "done": 1,
+        "in_progress": 3,
+        "pending": 5
+      },
+      "user_productivity": [
+        {
+          "completed_tasks": 0,
+          "completion_rate": 0.0,
+          "total_tasks": 4,
+          "user_id": 1,
+          "user_name": "João Silva"
+        },
+        {
+          "completed_tasks": 0,
+          "completion_rate": 0.0,
+          "total_tasks": 3,
+          "user_id": 2,
+          "user_name": "Maria Santos Silva"
+        },
+        {
+          "completed_tasks": 1,
+          "completion_rate": 33.33,
+          "total_tasks": 3,
+          "user_id": 3,
+          "user_name": "Pedro Oliveira"
+        },
+        {
+          "completed_tasks": 0,
+          "completion_rate": 0,
+          "total_tasks": 0,
+          "user_id": 4,
+          "user_name": "Novo"
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/reports/user/1",
+    "body": null,
+    "status": 200,
+    "response": {
+      "statistics": {
+        "cancelled": 0,
+        "completion_rate": 0.0,
+        "done": 0,
+        "high_priority": 2,
+        "in_progress": 1,
+        "overdue": 2,
+        "pending": 3,
+        "total_tasks": 4
+      },
+      "user": {
+        "email": "joao@email.com",
+        "id": 1,
+        "name": "João Silva"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/categories",
+    "body": null,
+    "status": 200,
+    "response": [
+      {
+        "color": "#3498db",
+        "created_at": "2026-10-10 18:08:46.779142",
+        "description": "Tarefas de backend",
+        "id": 1,
+        "name": "Backend",
+        "task_count": 6
+      },
+      {
+        "color": "#2ecc71",
+        "created_at": "2026-10-10 18:08:46.779142",
+        "description": "Tarefas de frontend",
+        "id": 2,
+        "name": "Frontend",
+        "task_count": 1
+      },
+      {
+        "color": "#e74c3c",
+        "created_at": "2026-10-10 18:08:46.779142",
+        "description": "Tarefas de infraestrutura",
+        "id": 3,
+        "name": "DevOps",
+        "task_count": 2
+      },
+      {
+        "color": "#e67e22",
+        "created_at": "2026-10-10 18:08:46.779142",
+        "description": "Correção de bugs",
+        "id": 4,
+        "name": "Bug",
+        "task_count": 1
+      }
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/categories",
+    "body": {
+      "name": "Docs",
+      "description": "Documentação",
+      "color": "#123456"
+    },
+    "status": 201,
+    "response": {
+      "color": "#123456",
+      "created_at": "2026-10-10 18:09:05.459472",
+      "description": "Documentação",
+      "id": 5,
+      "name": "Docs"
+    }
+  },
+  {
+    "method": "PUT",
+    "path": "/categories/5",
+    "body": {
+      "name": "Documentação"
+    },
+    "status": 200,
+    "response": {
+      "color": "#123456",
+      "created_at": "2026-10-10 18:09:05.459472",
+      "description": "Documentação",
+      "id": 5,
+      "name": "Documentação"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/categories/5",
+    "body": null,
+    "status": 200,
+    "response": {
+      "message": "Categoria deletada"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/users/4",
+    "body": null,
+    "status": 200,
+    "response": {
+      "message": "Usuário deletado com sucesso"
+    }
+  }
+]

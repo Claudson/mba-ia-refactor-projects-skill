@@ -1,0 +1,190 @@
+[
+  {
+    "method": "POST",
+    "path": "/tasks",
+    "body": {
+      "title": "Prioridade texto",
+      "priority": "alta"
+    },
+    "status": 500,
+    "response": "<html>"
+  },
+  {
+    "method": "POST",
+    "path": "/tasks",
+    "body": {
+      "title": "Usuario inexistente",
+      "user_id": 9999
+    },
+    "status": 404,
+    "response": {
+      "error": "Usuário não encontrado"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/tasks",
+    "body": {
+      "title": "Data ruim",
+      "due_date": "2030-13-45"
+    },
+    "status": 400,
+    "response": {
+      "error": "Formato de data inválido. Use YYYY-MM-DD"
+    }
+  },
+  {
+    "method": "PUT",
+    "path": "/tasks/1",
+    "body": {
+      "title": null
+    },
+    "status": 500,
+    "response": "<html>"
+  },
+  {
+    "method": "PUT",
+    "path": "/tasks/9999",
+    "body": {
+      "title": "abc"
+    },
+    "status": 404,
+    "response": {
+      "error": "Task não encontrada"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/tasks/search?priority=abc",
+    "body": null,
+    "status": 500,
+    "response": "<html>"
+  },
+  {
+    "method": "POST",
+    "path": "/users",
+    "body": {
+      "name": "X",
+      "email": "invalido",
+      "password": "1234"
+    },
+    "status": 400,
+    "response": {
+      "error": "Email inválido"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/users",
+    "body": {
+      "name": "X",
+      "email": "x@x.com",
+      "password": "12"
+    },
+    "status": 400,
+    "response": {
+      "error": "Senha deve ter no mínimo 4 caracteres"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/users",
+    "body": {
+      "name": "X",
+      "email": "y@x.com",
+      "password": "1234",
+      "role": "root"
+    },
+    "status": 400,
+    "response": {
+      "error": "Role inválido"
+    }
+  },
+  {
+    "method": "PUT",
+    "path": "/users/9999",
+    "body": {
+      "name": "abc"
+    },
+    "status": 404,
+    "response": {
+      "error": "Usuário não encontrado"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/login",
+    "body": {
+      "email": "joao@email.com"
+    },
+    "status": 400,
+    "response": {
+      "error": "Email e senha são obrigatórios"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/categories",
+    "body": {
+      "description": "sem nome"
+    },
+    "status": 400,
+    "response": {
+      "error": "Nome é obrigatório"
+    }
+  },
+  {
+    "method": "PUT",
+    "path": "/categories/9999",
+    "body": {
+      "name": "x"
+    },
+    "status": 404,
+    "response": {
+      "error": "Categoria não encontrada"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/categories/9999",
+    "body": null,
+    "status": 404,
+    "response": {
+      "error": "Categoria não encontrada"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/reports/user/9999",
+    "body": null,
+    "status": 404,
+    "response": {
+      "error": "Usuário não encontrado"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/rota-inexistente",
+    "body": null,
+    "status": 404,
+    "response": "<html>"
+  },
+  {
+    "method": "DELETE",
+    "path": "/tasks/9999",
+    "body": null,
+    "status": 404,
+    "response": {
+      "error": "Task não encontrada"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/users/9999",
+    "body": null,
+    "status": 404,
+    "response": {
+      "error": "Usuário não encontrado"
+    }
+  }
+]
