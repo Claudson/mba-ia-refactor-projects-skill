@@ -1,6 +1,0 @@
-2026-10-10T17:49:25.096Z [WARN] PAYMENT_GATEWAY_KEY não definida; gateway de pagamento em modo simulado
-2026-10-10T17:49:25.099Z [WARN] ADMIN_TOKEN não definido; endpoints administrativos desabilitados (403)
-2026-10-10T17:49:25.107Z [INFO] LMS API rodando na porta 3000
-2026-10-10T17:49:25.727Z [INFO] Processando pagamento de 497 no cartão **** 4444
-2026-10-10T17:49:25.782Z [INFO] Processando pagamento de 997 no cartão **** 4444
-2026-10-10T17:49:25.784Z [INFO] Processando pagamento de 497 no cartão **** 2222
