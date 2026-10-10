@@ -1,31 +1,31 @@
-# Refactoring Playbook (Phase 3)
+# Playbook de Refatoração (Fase 3)
 
-Concrete transformations, one per anti-pattern family. Each has **before/after** code. Examples
-are in Python/Flask and Node/Express; translate them to the detected stack. Apply them in the
-order of the *Execution order* section at the end.
+Transformações concretas, uma por família de anti-pattern. Cada uma tem código **antes/depois**.
+Os exemplos estão em Python/Flask e Node/Express; traduza-os para a stack detectada. Aplique-os
+na ordem da seção *Ordem de execução* no final.
 
-| Pattern | Fixes |
+| Padrão | Corrige |
 |---|---|
-| P-01 Externalize configuration | AP-01, AP-07 |
-| P-02 Parameterized queries | AP-02 |
-| P-03 Split God Class into MVC layers | AP-06, AP-09, AP-19 |
-| P-04 Extract controller (thin routes) | AP-08 |
-| P-05 Remove N+1 queries | AP-12 |
-| P-06 Replace global state with injected dependencies | AP-09, AP-10 |
-| P-07 Strong password hashing | AP-03 |
-| P-08 Safe serialization & log redaction | AP-04 |
-| P-09 Async/await + transactions | AP-11, AP-16 |
-| P-10 Centralized error handling | AP-15, AP-04 |
-| P-11 Replace deprecated APIs | AP-DEP |
-| P-12 Single source of truth (validators, constants, model rules) | AP-13, AP-14, AP-18, AP-21 |
-| P-13 Guard dangerous endpoints | AP-05 |
-| P-14 Logger instead of print | AP-17 |
+| P-01 Externalizar configuração | AP-01, AP-07 |
+| P-02 Queries parametrizadas | AP-02 |
+| P-03 Separar God Class em camadas MVC | AP-06, AP-09, AP-19 |
+| P-04 Extrair controller (rotas finas) | AP-08 |
+| P-05 Eliminar queries N+1 | AP-12 |
+| P-06 Trocar estado global por dependências injetadas | AP-09, AP-10 |
+| P-07 Hash forte de senhas | AP-03 |
+| P-08 Serialização segura e mascaramento em logs | AP-04 |
+| P-09 Async/await + transações | AP-11, AP-16 |
+| P-10 Tratamento de erros centralizado | AP-15, AP-04 |
+| P-11 Substituir APIs deprecated | AP-DEP |
+| P-12 Fonte única (validadores, constantes, regras no model) | AP-13, AP-14, AP-18, AP-21 |
+| P-13 Proteger endpoints perigosos | AP-05 |
+| P-14 Logger em vez de print | AP-17 |
 
 ---
 
-## P-01 — Externalize configuration
+## P-01 — Externalizar configuração
 
-**Before (Python)**
+**Antes (Python)**
 ```python
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "minha-chave-super-secreta-123"
@@ -33,7 +33,7 @@ app.config["DEBUG"] = True
 ...
 app.run(host="0.0.0.0", port=5000, debug=True)
 ```
-**After**
+**Depois**
 ```python
 # src/config/settings.py
 import os, secrets, logging
@@ -42,47 +42,47 @@ def _bool(name, default=False):
     return os.environ.get(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
 
 class Settings:
-    SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)   # never a literal
+    SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)   # nunca um literal
     DEBUG = _bool("FLASK_DEBUG", False)
     HOST = os.environ.get("HOST", "127.0.0.1")
     PORT = int(os.environ.get("PORT", "5000"))
     DATABASE_PATH = os.environ.get("DATABASE_PATH", "loja.db")
-    ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")                          # None → admin disabled
+    ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")                          # None → admin desabilitado
 
     def __init__(self):
         if not os.environ.get("SECRET_KEY"):
-            logging.getLogger(__name__).warning("SECRET_KEY not set; using an ephemeral key")
+            logging.getLogger(__name__).warning("SECRET_KEY não definida; usando chave efêmera")
 
 # app.py (entry point)
 settings = Settings()
 app = create_app(settings)
 app.run(host=settings.HOST, port=settings.PORT, debug=settings.DEBUG)
 ```
-**Before (Node)**
+**Antes (Node)**
 ```js
 const config = { dbPass: "senha_super_secreta_prod_123", paymentGatewayKey: "pk_live_123", port: 3000 };
 ```
-**After**
+**Depois**
 ```js
 // src/config/index.js
 module.exports = Object.freeze({
   port: Number(process.env.PORT) || 3000,
   db: { user: process.env.DB_USER || '', password: process.env.DB_PASSWORD || '' },
-  paymentGatewayKey: process.env.PAYMENT_GATEWAY_KEY || '',   // empty → gateway in sandbox/disabled mode
+  paymentGatewayKey: process.env.PAYMENT_GATEWAY_KEY || '',   // vazio → gateway em modo sandbox/desabilitado
 });
 ```
-Plus `.env.example` listing every variable with placeholder values (no real secrets).
+Mais um `.env.example` listando todas as variáveis com valores de exemplo (sem segredos reais).
 
 ---
 
-## P-02 — Parameterized queries
+## P-02 — Queries parametrizadas
 
-**Before**
+**Antes**
 ```python
 cursor.execute("SELECT * FROM usuarios WHERE email = '" + email + "' AND senha = '" + senha + "'")
 query += " AND (nome LIKE '%" + termo + "%')"
 ```
-**After**
+**Depois**
 ```python
 cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
 
@@ -93,39 +93,39 @@ if termo:
 if categoria:
     clauses.append("categoria = ?")
     params.append(categoria)
-cursor.execute(f"SELECT * FROM produtos WHERE {' AND '.join(clauses)}", params)  # only fixed SQL fragments are joined
+cursor.execute(f"SELECT * FROM produtos WHERE {' AND '.join(clauses)}", params)  # só fragmentos fixos de SQL são concatenados
 ```
 **Node**
 ```js
-// before: db.get(`SELECT * FROM users WHERE id = ${req.params.id}`)
+// antes: db.get(`SELECT * FROM users WHERE id = ${req.params.id}`)
 await db.get('SELECT * FROM users WHERE id = ?', [id]);
 ```
 
 ---
 
-## P-03 — Split a God Class / God Module into MVC layers
+## P-03 — Separar God Class / God Module em camadas MVC
 
-**Before (Node)** — one class does everything
+**Antes (Node)** — uma classe faz tudo
 ```js
 class AppManager {
   constructor() { this.db = new sqlite3.Database(':memory:'); }
   initDb() { /* CREATE TABLE ... INSERT seed ... */ }
   setupRoutes(app) {
-    app.post('/api/checkout', (req, res) => { /* validation + SQL + payment + audit */ });
-    app.get('/api/admin/financial-report', (req, res) => { /* nested queries */ });
+    app.post('/api/checkout', (req, res) => { /* validação + SQL + pagamento + auditoria */ });
+    app.get('/api/admin/financial-report', (req, res) => { /* queries aninhadas */ });
   }
 }
 ```
-**After**
+**Depois**
 ```js
-// src/database/connection.js   → open DB, promisified run/get/all, schema + seed
+// src/database/connection.js   → abre o banco, run/get/all com promise, schema + seed
 // src/models/courseModel.js
 module.exports = (db) => ({
   findActiveById: (id) => db.get('SELECT * FROM courses WHERE id = ? AND active = 1', [id]),
 });
 // src/controllers/checkoutController.js
 module.exports = ({ courseModel, userModel, checkoutService }) => ({
-  async checkout(input) { /* validate → orchestrate → return { msg, enrollment_id } */ },
+  async checkout(input) { /* valida → orquestra → retorna { msg, enrollment_id } */ },
 });
 // src/routes/checkoutRoutes.js
 router.post('/api/checkout', asyncHandler(async (req, res) => {
@@ -137,15 +137,15 @@ const models = createModels(db);
 app.use(createCheckoutRoutes(createCheckoutController({ ...models, checkoutService })));
 app.use(errorHandler);
 ```
-**Python** — `models.py` with every domain → `models/product_model.py`, `models/user_model.py`,
-`models/order_model.py`; business rules (stock check, totals, discount tiers) move to the
-entity model or an `order_service.py`; HTTP stays in `views/*_routes.py`.
+**Python** — `models.py` com todos os domínios → `models/product_model.py`,
+`models/user_model.py`, `models/order_model.py`; regras de negócio (checagem de estoque, totais,
+faixas de desconto) vão para o model da entidade ou para um `order_service.py`; o HTTP fica em `views/*_routes.py`.
 
 ---
 
-## P-04 — Extract controller (thin routes)
+## P-04 — Extrair controller (rotas finas)
 
-**Before**
+**Antes**
 ```python
 @task_bp.route('/tasks', methods=['POST'])
 def create_task():
@@ -153,10 +153,10 @@ def create_task():
     if not data: return jsonify({'error': 'Dados inválidos'}), 400
     title = data.get('title')
     if not title: return jsonify({'error': 'Título é obrigatório'}), 400
-    ... 60 lines: validation, lookups, model building, commit, try/except ...
+    ... 60 linhas: validação, buscas, montagem do model, commit, try/except ...
     return jsonify(task.to_dict()), 201
 ```
-**After**
+**Depois**
 ```python
 # views/task_routes.py
 @task_bp.post('/tasks')
@@ -166,8 +166,8 @@ def create_task():
 
 # controllers/task_controller.py
 def create_task(data):
-    payload = validate_task_payload(data, required=("title",))   # raises ValidationError(400, msg)
-    ensure_exists(User, payload.get("user_id"), "Usuário não encontrado")   # raises NotFoundError
+    payload = validate_task_payload(data, required=("title",))   # lança ValidationError(400, msg)
+    ensure_exists(User, payload.get("user_id"), "Usuário não encontrado")   # lança NotFoundError
     task = Task(**payload)
     db.session.add(task); db.session.commit()
     return task.to_dict()
@@ -175,16 +175,16 @@ def create_task(data):
 
 ---
 
-## P-05 — Remove N+1 queries
+## P-05 — Eliminar queries N+1
 
-**Before**
+**Antes**
 ```python
 for row in cursor.execute("SELECT * FROM pedidos").fetchall():
     itens = db.execute("SELECT * FROM itens_pedido WHERE pedido_id = " + str(row["id"])).fetchall()
     for item in itens:
         prod = db.execute("SELECT nome FROM produtos WHERE id = " + str(item["produto_id"])).fetchone()
 ```
-**After (single JOIN, grouped in memory)**
+**Depois (um único JOIN, agrupado em memória)**
 ```python
 rows = db.execute("""
     SELECT p.id, p.usuario_id, p.status, p.total, p.criado_em,
@@ -201,19 +201,19 @@ for r in rows:
         order["itens"].append(item_fields(r))
 return list(orders.values())
 ```
-**ORM (SQLAlchemy)** — `Task.query.all()` + `User.query.get(t.user_id)` per task →
+**ORM (SQLAlchemy)** — `Task.query.all()` + `User.query.get(t.user_id)` por task →
 `db.session.execute(db.select(Task).options(joinedload(Task.user), joinedload(Task.category))).scalars()`;
-per-row counts → one `GROUP BY`:
+contagens por linha → um único `GROUP BY`:
 ```python
 counts = dict(db.session.execute(db.select(Task.status, func.count()).group_by(Task.status)).all())
 ```
-**Node** — nested `forEach` + `db.get` → one `JOIN` query, then group rows by course.
+**Node** — `forEach` aninhado + `db.get` → uma query com `JOIN`, depois agrupar as linhas por curso.
 
 ---
 
-## P-06 — Replace global mutable state with injected dependencies
+## P-06 — Trocar estado global mutável por dependências injetadas
 
-**Before**
+**Antes**
 ```python
 db_connection = None
 def get_db():
@@ -224,9 +224,9 @@ def get_db():
 ```js
 let globalCache = {}; let totalRevenue = 0;
 ```
-**After**
+**Depois**
 ```python
-# src/database.py — connection per request, stored in flask.g
+# src/database.py — conexão por requisição, guardada em flask.g
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(current_app.config["DATABASE_PATH"])
@@ -244,7 +244,7 @@ def init_app(app):
         init_schema(get_db())
 ```
 ```js
-// cache becomes an object owned by the composition root and injected where needed
+// o cache vira um objeto criado pelo composition root e injetado onde for necessário
 function createCache() { const store = new Map(); return { set: (k, v) => store.set(k, v), get: (k) => store.get(k) }; }
 const cache = createCache();
 const checkoutService = createCheckoutService({ db, cache, config });
@@ -252,24 +252,24 @@ const checkoutService = createCheckoutService({ db, cache, config });
 
 ---
 
-## P-07 — Strong password hashing
+## P-07 — Hash forte de senhas
 
-**Before**
+**Antes**
 ```python
-self.password = hashlib.md5(pwd.encode()).hexdigest()           # or plaintext: VALUES ('" + senha + "')
+self.password = hashlib.md5(pwd.encode()).hexdigest()           # ou texto puro: VALUES ('" + senha + "')
 ```
 ```js
-function badCrypto(pwd) { /* base64 loop */ }
+function badCrypto(pwd) { /* loop de base64 */ }
 ```
-**After (Python — werkzeug ships with Flask, no new dependency)**
+**Depois (Python — o werkzeug já vem com o Flask, sem nova dependência)**
 ```python
 from werkzeug.security import generate_password_hash, check_password_hash
 
 def set_password(self, raw): self.password = generate_password_hash(raw)
 def check_password(self, raw): return check_password_hash(self.password, raw)
-# raw SQL: store generate_password_hash(senha); login = fetch by email, then check_password_hash
+# SQL puro: gravar generate_password_hash(senha); login = buscar por email e depois check_password_hash
 ```
-**After (Node — built-in crypto)**
+**Depois (Node — crypto nativo)**
 ```js
 const crypto = require('crypto');
 function hashPassword(password) {
@@ -282,13 +282,13 @@ function verifyPassword(password, stored) {
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), crypto.scryptSync(password, salt, 64));
 }
 ```
-Seed data must be hashed the same way so existing logins keep working.
+Os dados de seed devem receber o mesmo hash para que os logins existentes continuem funcionando.
 
 ---
 
-## P-08 — Safe serialization & log redaction
+## P-08 — Serialização segura e mascaramento em logs
 
-**Before**
+**Antes**
 ```python
 def to_dict(self):
     return {"id": self.id, "email": self.email, "password": self.password}
@@ -296,22 +296,22 @@ def to_dict(self):
 ```js
 console.log(`Processando cartão ${cc} na chave ${config.paymentGatewayKey}`);
 ```
-**After**
+**Depois**
 ```python
 PUBLIC_FIELDS = ("id", "nome", "email", "tipo", "criado_em")
 def to_public_dict(row): return {k: row[k] for k in PUBLIC_FIELDS}
 ```
 ```js
 const maskCard = (n) => `**** **** **** ${String(n).slice(-4)}`;
-logger.info(`Processing payment for card ${maskCard(cardNumber)}`);   // never log keys
+logger.info(`Processando pagamento do cartão ${maskCard(cardNumber)}`);   // nunca logar chaves
 ```
-Health/info endpoints: return status and counts only — never config values.
+Endpoints de health/info: devolver apenas status e contagens — nunca valores de configuração.
 
 ---
 
-## P-09 — Async/await + transactions (and referential integrity)
+## P-09 — Async/await + transações (e integridade referencial)
 
-**Before (callback pyramid, no transaction)**
+**Antes (pirâmide de callbacks, sem transação)**
 ```js
 db.run("INSERT INTO enrollments ...", [u, c], function (err) {
   db.run("INSERT INTO payments ...", [this.lastID, price], function (err) {
@@ -319,7 +319,7 @@ db.run("INSERT INTO enrollments ...", [u, c], function (err) {
   });
 });
 ```
-**After**
+**Depois**
 ```js
 // database/connection.js
 const run = (sql, p = []) => new Promise((ok, ko) => db.run(sql, p, function (e) { e ? ko(e) : ok(this); }));
@@ -336,30 +336,30 @@ return transaction(async () => {
   return enrollmentId;
 });
 ```
-**Python (sqlite3)** — validate everything first, then write inside `with conn:` (commits or
-rolls back atomically):
+**Python (sqlite3)** — valide tudo primeiro e depois grave dentro de `with conn:` (faz commit ou
+rollback de forma atômica):
 ```python
-with db:   # transaction
+with db:   # transação
     cur = db.execute("INSERT INTO pedidos (usuario_id, status, total) VALUES (?, 'pendente', ?)", (uid, total))
     db.executemany("INSERT INTO itens_pedido (...) VALUES (?, ?, ?, ?)", rows)
     db.executemany("UPDATE produtos SET estoque = estoque - ? WHERE id = ?", stock_updates)
 ```
-**Delete with dependents** — inside one transaction delete/handle children first
-(payments → enrollments → user) or enable FK `ON DELETE CASCADE`.
+**Exclusão com dependentes** — numa única transação, apague/trate os filhos primeiro
+(payments → enrollments → user) ou habilite FK `ON DELETE CASCADE`.
 
 ---
 
-## P-10 — Centralized error handling
+## P-10 — Tratamento de erros centralizado
 
-**Before**
+**Antes**
 ```python
 def buscar_produto(id):
     try:
         ...
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500        # repeated in every handler, leaks internals
+        return jsonify({"erro": str(e)}), 500        # repetido em todo handler, vaza detalhes internos
 ```
-**After (Flask)**
+**Depois (Flask)**
 ```python
 # middlewares/error_handler.py
 class AppError(Exception):
@@ -376,36 +376,36 @@ def register_error_handlers(app, error_key="erro"):
 
     @app.errorhandler(Exception)
     def handle_unexpected(err):
-        if isinstance(err, HTTPException):          # keep Flask's 404/405
+        if isinstance(err, HTTPException):          # mantém os 404/405 do Flask
             return err
-        app.logger.exception("Unhandled error")
+        app.logger.exception("Erro não tratado")
         return jsonify({error_key: "Erro interno do servidor"}), 500
 ```
-**After (Express)**
+**Depois (Express)**
 ```js
 const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 class AppError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
-function errorHandler(err, req, res, next) {        // registered last
-  if (err instanceof AppError) return res.status(err.status).send(err.message);   // keep original format
+function errorHandler(err, req, res, next) {        // registrado por último
+  if (err instanceof AppError) return res.status(err.status).send(err.message);   // mantém o formato original
   logger.error(err); res.status(500).send('Erro interno');
 }
 ```
-Keep the project's original error key (`erro`/`error`) and body format (JSON vs text).
+Mantenha a chave de erro original do projeto (`erro`/`error`) e o formato do corpo (JSON vs texto).
 
 ---
 
-## P-11 — Replace deprecated APIs
+## P-11 — Substituir APIs deprecated
 
 ```python
-# before                                   # after
+# antes                                    # depois
 datetime.utcnow()                          datetime.now(timezone.utc)
 Task.query.get(task_id)                    db.session.get(Task, task_id)
 db.Column(db.DateTime, default=datetime.utcnow)
                                            db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 ```
-Careful with naive vs aware datetimes: if the DB stores naive UTC values, compare with
-`datetime.now(timezone.utc).replace(tzinfo=None)` (centralize it in one `utcnow()` helper) so
-existing data and serialized formats (`str(dt)`) stay identical.
+Cuidado com datetimes naive vs aware: se o banco guarda valores UTC naive, compare com
+`datetime.now(timezone.utc).replace(tzinfo=None)` (centralize num helper `utcnow()`) para que os
+dados existentes e os formatos serializados (`str(dt)`) continuem idênticos.
 ```js
 new Buffer(str)              → Buffer.from(str)
 url.parse(u)                 → new URL(u)
@@ -416,9 +416,9 @@ var x = 1                    → const x = 1
 
 ---
 
-## P-12 — Single source of truth (validators, constants, model rules)
+## P-12 — Fonte única (validadores, constantes, regras no model)
 
-**Before** — rule copied in 6 handlers; magic numbers inline
+**Antes** — regra copiada em 6 handlers; magic numbers inline
 ```python
 if t.due_date:
     if t.due_date < datetime.utcnow():
@@ -427,7 +427,7 @@ if t.due_date:
 ...
 if faturamento > 10000: desconto = faturamento * 0.1
 ```
-**After**
+**Depois**
 ```python
 # models/task.py
 VALID_STATUSES = ("pending", "in_progress", "done", "cancelled")
@@ -438,11 +438,11 @@ def is_overdue(self):
     return bool(self.due_date and self.due_date < utcnow() and self.status not in CLOSED_STATUSES)
 
 # models/order_model.py
-DISCOUNT_TIERS = ((10_000, 0.10), (5_000, 0.05), (1_000, 0.02))   # (minimum revenue, rate)
+DISCOUNT_TIERS = ((10_000, 0.10), (5_000, 0.05), (1_000, 0.02))   # (faturamento mínimo, taxa)
 def discount_for(revenue):
     return next((revenue * rate for minimum, rate in DISCOUNT_TIERS if revenue > minimum), 0)
 ```
-Validators shared by create/update:
+Validadores compartilhados entre criar/atualizar:
 ```python
 def validate_product(data):
     if not data: raise ValidationError("Dados inválidos")
@@ -450,20 +450,20 @@ def validate_product(data):
         if field not in data: raise ValidationError(f"{label} é obrigatório")
     ...
 ```
-Also: `if x: return True else: return False` → `return x`; `type(t) == list` → `isinstance(t, list)`;
-delete unused imports and dead helpers.
+Também: `if x: return True else: return False` → `return x`; `type(t) == list` → `isinstance(t, list)`;
+apague imports não usados e helpers mortos.
 
 ---
 
-## P-13 — Guard dangerous endpoints
+## P-13 — Proteger endpoints perigosos
 
-**Before**
+**Antes**
 ```python
 @app.route("/admin/query", methods=["POST"])
 def executar_query():
-    cursor.execute(request.get_json()["sql"])          # arbitrary SQL, no auth
+    cursor.execute(request.get_json()["sql"])          # SQL arbitrário, sem autenticação
 ```
-**After**
+**Depois**
 ```python
 # middlewares/auth.py
 def require_admin(view):
@@ -482,14 +482,14 @@ def require_admin(view):
 @require_admin
 def executar_query():
     return jsonify(admin_controller.run_read_only_query(request.get_json(silent=True))), 200
-# controller: only a single SELECT statement is accepted, executed on a read-only connection
+# controller: aceita apenas um único SELECT, executado numa conexão somente leitura
 ```
-Fake tokens (`'fake-jwt-token-' + id`) → signed token (`itsdangerous` ships with Flask; Node
-`crypto.createHmac`) keeping the same response key.
+Tokens falsos (`'fake-jwt-token-' + id`) → token assinado (`itsdangerous` já vem com o Flask;
+`crypto.createHmac` no Node), mantendo a mesma chave na resposta.
 
 ---
 
-## P-14 — Logger instead of print
+## P-14 — Logger em vez de print
 
 ```python
 print("ERRO: " + str(e))                  →  logger.exception("Erro ao listar produtos")
@@ -498,17 +498,17 @@ print("Produto criado com ID: " + str(id)) →  logger.info("Produto criado id=%
 ```js
 console.log(`[LOG] ...`)                  →  const logger = require('../utils/logger'); logger.info('...')
 ```
-Configure the logger once in the composition root (level from config).
+Configure o logger uma única vez no composition root (nível vindo da config).
 
 ---
 
-## Execution order
+## Ordem de execução
 
-1. **P-01** config module + `.env.example`
-2. Database/connection module (**P-06**) and models per entity (**P-03**, **P-02**, **P-05**, **P-07**, **P-08**, **P-11**, **P-12**)
-3. Services for multi-entity workflows (**P-09**)
-4. Controllers (**P-04**, **P-12** validators)
-5. Views/routes (thin) + guards (**P-13**)
-6. Error handler + logger (**P-10**, **P-14**)
-7. Composition root + entry point; update seed scripts/README; delete old files
-8. Validate (SKILL.md § 3.4)
+1. **P-01** módulo de config + `.env.example`
+2. Módulo de banco/conexão (**P-06**) e models por entidade (**P-03**, **P-02**, **P-05**, **P-07**, **P-08**, **P-11**, **P-12**)
+3. Services para fluxos com várias entidades (**P-09**)
+4. Controllers (**P-04**, validadores **P-12**)
+5. Views/routes (finas) + guards (**P-13**)
+6. Handler de erros + logger (**P-10**, **P-14**)
+7. Composition root + entry point; atualizar scripts de seed/README; apagar arquivos antigos
+8. Validar (SKILL.md § 3.4)

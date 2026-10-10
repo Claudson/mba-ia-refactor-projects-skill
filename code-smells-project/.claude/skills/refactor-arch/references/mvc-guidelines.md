@@ -1,114 +1,114 @@
-# MVC Architecture Guidelines (Phase 3 target)
+# Guidelines de Arquitetura MVC (alvo da Fase 3)
 
-The target is a **layered MVC** for HTTP APIs. In an API the *View* is the HTTP representation:
-routes + serialization of responses. Dependencies point **inward only**:
+O alvo é um **MVC em camadas** para APIs HTTP. Numa API, a *View* é a representação HTTP:
+rotas + serialização das respostas. As dependências apontam **apenas para dentro**:
 
 ```
-HTTP request
+Requisição HTTP
    │
    ▼
-Views / Routes  ──►  Controllers  ──►  (Services)  ──►  Models  ──►  Database
+Views / Routes  ──►  Controllers  ──►  (Services)  ──►  Models  ──►  Banco de dados
    ▲                     │                                 │
-   └── Middlewares (error handling, auth) ◄── raise AppError ┘
-Config ──► injected by the Composition Root (app factory) into every layer that needs it
+   └── Middlewares (tratamento de erros, auth) ◄── lançam AppError ┘
+Config ──► injetada pelo Composition Root (app factory) em toda camada que precisar
 ```
 
-## Layer responsibilities
+## Responsabilidades das camadas
 
-| Layer | MUST | MUST NOT |
+| Camada | DEVE | NÃO DEVE |
 |---|---|---|
-| **Config** (`config/`) | Read every setting from environment variables with safe *non-secret* defaults; expose one settings object; define per-env behaviour (debug off by default) | Contain secrets as literals; import other layers |
-| **Models** (`models/`) | Own data access for **one** entity/aggregate (parameterized SQL or ORM); hold the entity's own domain rules (e.g. `is_overdue()`, `calculate_total()`), constants/enums (valid statuses) and safe serialization (`to_dict()` without secrets) | Know about HTTP (`request`, `jsonify`, `res`); build SQL by concatenation; print/log user secrets |
-| **Services** (`services/`, optional) | Hold workflows that span several models or external systems (checkout, notifications, reports); be called by controllers | Know about HTTP; be instantiated with hardcoded credentials |
-| **Controllers** (`controllers/`) | Orchestrate the use case: validate input, call models/services, decide the outcome; receive plain data (dict/params), return plain data or raise `AppError(status, message)` | Parse the raw HTTP request or build HTTP responses; contain SQL; duplicate rules that belong to a model |
-| **Views / Routes** (`views/` or `routes/`) | Map `METHOD PATH` → controller; extract params/body/query; turn controller results into HTTP responses (status + JSON); be thin (≈ 5–15 lines per handler) | Contain business rules, queries or try/except per handler |
-| **Middlewares** (`middlewares/`) | Centralized error handler (AppError → JSON with its status; unexpected → 500 with generic message + server-side log); auth/admin guards; request logging | Hide errors silently |
-| **Composition root** (`app.py` / `app.js` factory) | Create the app, load config, init DB, register routes and middlewares, wire dependencies | Contain routes or business logic |
-| **Entry point** | Start the server using config (host/port/debug) | Anything else |
+| **Config** (`config/`) | Ler toda configuração de variáveis de ambiente com defaults seguros *não secretos*; expor um único objeto de settings; definir comportamento por ambiente (debug desligado por padrão) | Conter segredos como literais; importar outras camadas |
+| **Models** (`models/`) | Cuidar do acesso a dados de **uma** entidade/agregado (SQL parametrizado ou ORM); conter as regras de domínio da própria entidade (ex.: `is_overdue()`, `calculate_total()`), constantes/enums (status válidos) e serialização segura (`to_dict()` sem segredos) | Conhecer HTTP (`request`, `jsonify`, `res`); montar SQL por concatenação; imprimir/logar segredos de usuário |
+| **Services** (`services/`, opcional) | Conter fluxos que envolvem vários models ou sistemas externos (checkout, notificações, relatórios); ser chamados pelos controllers | Conhecer HTTP; ser instanciados com credenciais hardcoded |
+| **Controllers** (`controllers/`) | Orquestrar o caso de uso: validar entrada, chamar models/services, decidir o resultado; receber dados simples (dict/params) e devolver dados simples ou lançar `AppError(status, mensagem)` | Ler a requisição HTTP crua ou montar respostas HTTP; conter SQL; duplicar regras que pertencem a um model |
+| **Views / Routes** (`views/` ou `routes/`) | Mapear `MÉTODO PATH` → controller; extrair params/body/query; transformar o resultado do controller em resposta HTTP (status + JSON); ser finas (≈ 5–15 linhas por handler) | Conter regras de negócio, queries ou try/except em cada handler |
+| **Middlewares** (`middlewares/`) | Handler de erros centralizado (AppError → JSON com seu status; inesperado → 500 com mensagem genérica + log no servidor); guards de auth/admin; log de requisições | Esconder erros silenciosamente |
+| **Composition root** (factory em `app.py` / `app.js`) | Criar a aplicação, carregar config, inicializar o banco, registrar rotas e middlewares, conectar as dependências | Conter rotas ou regra de negócio |
+| **Entry point** | Subir o servidor usando a config (host/porta/debug) | Qualquer outra coisa |
 
-### Rules
-1. **One entity per model/controller/routes file** (`product_model`, `product_controller`, `product_routes`).
-2. **No layer skipping:** routes never call models directly; models never import controllers.
-3. **Single source of truth** for each rule, constant and serializer (no duplicated validation).
-4. **Errors flow as exceptions** (`AppError`/`NotFoundError`/`ValidationError`) to the central
-   handler — no `try/except` in every route.
-5. **Dependencies injected** by the composition root (DB handle, config, services) — enable
-   testing in isolation. Module-level mutable state is forbidden (constants are fine).
-6. **Logging** through the language's logger, never `print`/`console.log` for events/errors.
-7. **Config boots without `.env`:** every variable has a safe default except secrets; a missing
-   `SECRET_KEY` is generated randomly at startup (with a warning); missing integration keys
-   (payment, SMTP) disable that integration instead of crashing. Add `.env.example`.
+### Regras
+1. **Uma entidade por arquivo de model/controller/routes** (`product_model`, `product_controller`, `product_routes`).
+2. **Sem pular camadas:** rotas nunca chamam models diretamente; models nunca importam controllers.
+3. **Fonte única** para cada regra, constante e serializer (sem validação duplicada).
+4. **Erros fluem como exceções** (`AppError`/`NotFoundError`/`ValidationError`) até o handler
+   central — sem `try/except` em cada rota.
+5. **Dependências injetadas** pelo composition root (handle do banco, config, services) —
+   permitindo testes isolados. Estado mutável em nível de módulo é proibido (constantes podem).
+6. **Logs** pelo logger da linguagem, nunca `print`/`console.log` para eventos/erros.
+7. **A config sobe sem `.env`:** toda variável tem default seguro, exceto segredos; um
+   `SECRET_KEY` ausente é gerado aleatoriamente no startup (com warning); chaves de integração
+   ausentes (pagamento, SMTP) desativam a integração em vez de derrubar a aplicação. Crie `.env.example`.
 
-## Reference layouts
+## Layouts de referência
 
 ### Python / Flask
 ```
-<project>/
-├── app.py                      # entry point (keeps the original run command working)
-├── src/                        # (or a package named after the project)
+<projeto>/
+├── app.py                      # entry point (mantém o comando de execução original funcionando)
+├── src/                        # (ou um pacote com o nome do projeto)
 │   ├── __init__.py
 │   ├── app.py                  # create_app(config) — composition root
-│   ├── config/settings.py      # env-based settings
-│   ├── database.py             # connection lifecycle (per-request/app context), schema, seed
-│   ├── models/<entity>_model.py
-│   ├── services/<workflow>_service.py      # optional
-│   ├── controllers/<entity>_controller.py
-│   ├── views/<entity>_routes.py            # Blueprints (HTTP only)
+│   ├── config/settings.py      # settings baseadas em variáveis de ambiente
+│   ├── database.py             # ciclo de vida da conexão (por requisição/app context), schema, seed
+│   ├── models/<entidade>_model.py
+│   ├── services/<fluxo>_service.py         # opcional
+│   ├── controllers/<entidade>_controller.py
+│   ├── views/<entidade>_routes.py          # Blueprints (só HTTP)
 │   ├── middlewares/error_handler.py        # AppError + @app.errorhandler
-│   └── middlewares/auth.py                 # admin guard, if needed
+│   └── middlewares/auth.py                 # guard de admin, se necessário
 ├── .env.example
 └── requirements.txt
 ```
-Flask specifics: use an **app factory** (`create_app`), register Blueprints, keep sqlite
-connections in `flask.g` (open per request, close in `teardown_appcontext`) or use the ORM session;
+Específico de Flask: use **app factory** (`create_app`), registre Blueprints, mantenha conexões
+sqlite em `flask.g` (abre por requisição, fecha em `teardown_appcontext`) ou use a sessão do ORM;
 `app.run(debug=settings.DEBUG)`.
 
 ### Node.js / Express
 ```
-<project>/
+<projeto>/
 ├── src/
-│   ├── app.js                  # entry point: createApp() + listen (keeps `npm start`)
-│   ├── server.js / createApp.js# composition root (optional split)
-│   ├── config/index.js         # env-based settings
-│   ├── database/connection.js  # open DB, promisified helpers (run/get/all), schema + seed
-│   ├── models/<entity>Model.js # data access with parameterized queries
-│   ├── services/<workflow>Service.js        # optional
-│   ├── controllers/<entity>Controller.js    # async functions
-│   ├── routes/<entity>Routes.js             # express.Router (HTTP only)
+│   ├── app.js                  # entry point: createApp() + listen (mantém o `npm start`)
+│   ├── server.js / createApp.js# composition root (separação opcional)
+│   ├── config/index.js         # settings baseadas em variáveis de ambiente
+│   ├── database/connection.js  # abre o banco, helpers com promise (run/get/all), schema + seed
+│   ├── models/<entidade>Model.js # acesso a dados com queries parametrizadas
+│   ├── services/<fluxo>Service.js           # opcional
+│   ├── controllers/<entidade>Controller.js  # funções async
+│   ├── routes/<entidade>Routes.js           # express.Router (só HTTP)
 │   └── middlewares/errorHandler.js, asyncHandler.js
 ├── .env.example
 └── package.json
 ```
-Express specifics: wrap callback DB APIs into promises once (in `database/`), use `async/await`
-everywhere, `asyncHandler` to forward rejections to the error middleware
-(`app.use((err, req, res, next) => ...)` registered **last**).
+Específico de Express: encapsule uma vez as APIs de banco com callback em promises (em
+`database/`), use `async/await` em tudo, `asyncHandler` para encaminhar rejeições ao middleware
+de erro (`app.use((err, req, res, next) => ...)` registrado **por último**).
 
-### Other stacks
-Map the same layers to the idiom of the framework (FastAPI routers + dependencies, NestJS
-modules/controllers/providers, Spring `@RestController`/`@Service`/`@Repository`, Gin handlers +
-services + repositories). The responsibilities table above is the contract.
+### Outras stacks
+Mapeie as mesmas camadas para o idioma do framework (routers + dependencies no FastAPI,
+modules/controllers/providers no NestJS, `@RestController`/`@Service`/`@Repository` no Spring,
+handlers + services + repositories no Gin). A tabela de responsabilidades acima é o contrato.
 
-## Strategy (choose in Phase 3.2)
+## Estratégia (escolher na Fase 3.2)
 
-| Current state (Phase 1) | Strategy |
+| Estado atual (Fase 1) | Estratégia |
 |---|---|
-| **Monolithic / God Class** | *Full extraction*: create the target tree, move each function to its layer (model → controller → route), split per entity, then delete the old files. |
-| **Partially layered** (folders exist but routes are fat, services unused, config inline) | *In-place reorganization*: keep what is sound (e.g. ORM models), add the missing layers (config, controllers, error handler, app factory), move logic out of routes into controllers/models, fix security/quality findings in place. Moving everything under `src/` is optional — prefer the smaller diff if the structure is already MVC-compatible. |
-| **Layered MVC** | Fix findings in place; no structural move. |
+| **Monolítica / God Class** | *Extração completa*: criar a árvore alvo, mover cada função para sua camada (model → controller → route), separar por entidade e apagar os arquivos antigos. |
+| **Parcialmente em camadas** (pastas existem, mas rotas gordas, services sem uso, config inline) | *Reorganização no lugar*: manter o que está correto (ex.: models do ORM), adicionar as camadas que faltam (config, controllers, handler de erros, app factory), tirar a lógica das rotas para controllers/models e corrigir os findings de segurança/qualidade no lugar. Mover tudo para `src/` é opcional — prefira o menor diff se a estrutura já for compatível com MVC. |
+| **MVC em camadas** | Corrigir os findings no lugar; sem mudança estrutural. |
 
-Keep auxiliary scripts (seed, migrations) working: update their imports to the new structure.
+Mantenha scripts auxiliares (seed, migrações) funcionando: atualize seus imports para a nova estrutura.
 
-## API contract
+## Contrato da API
 
-Preserve: paths, methods, request field names, success/error status codes, top-level response
-keys and error message texts.
+Preserve: paths, métodos, nomes dos campos de requisição, status codes de sucesso/erro, chaves
+de primeiro nível das respostas e textos das mensagens de erro.
 
-Allowed **intentional** changes (must be listed in the Phase 3 summary):
-1. Removing secret/sensitive fields from responses (`password`, `senha`, `secret_key`, hashes).
-2. Guarding dangerous endpoints (admin/reset/raw-SQL) with an admin token from config
-   (`X-Admin-Token` header) → `401/403` without it. Raw SQL consoles additionally restricted to
-   read-only `SELECT`. Never silently delete an original endpoint.
-3. Turning crashes (500 on bad input) into proper `400`/`404` responses.
-4. Replacing fake/insecure behaviour (fake tokens, weak hashing) with a secure equivalent that
-   keeps the same response keys.
-5. Fixing data-integrity bugs (e.g. cascading deletes) without changing the response.
+Mudanças **intencionais** permitidas (devem ser listadas no resumo da Fase 3):
+1. Remover campos secretos/sensíveis das respostas (`password`, `senha`, `secret_key`, hashes).
+2. Proteger endpoints perigosos (admin/reset/SQL bruto) com um token de admin vindo da config
+   (header `X-Admin-Token`) → `401/403` sem ele. Consoles de SQL bruto também ficam restritos a
+   `SELECT` somente leitura. Nunca apague silenciosamente um endpoint original.
+3. Transformar crashes (500 em entrada inválida) em respostas `400`/`404` adequadas.
+4. Substituir comportamento falso/inseguro (tokens falsos, hash fraco) por um equivalente seguro
+   que mantenha as mesmas chaves de resposta.
+5. Corrigir bugs de integridade de dados (ex.: exclusão em cascata) sem mudar a resposta.

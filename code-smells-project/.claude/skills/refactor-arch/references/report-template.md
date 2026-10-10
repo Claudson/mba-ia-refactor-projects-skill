@@ -1,19 +1,20 @@
-# Audit Report Template (Phase 2)
+# Template do Relatório de Auditoria (Fase 2)
 
-The report is printed to the user **and** saved as Markdown (see SKILL.md, Phase 2 step 5).
-Reproduce the structure below exactly. Replace `<...>`; keep headers, separators and field
-labels verbatim (English). Free text (descriptions, impact, recommendation) in the user's language.
+O relatório é impresso para o usuário **e** salvo em Markdown (ver SKILL.md, Fase 2 passo 5).
+Reproduza exatamente a estrutura abaixo. Substitua `<...>`; mantenha cabeçalhos, separadores e
+rótulos dos campos literalmente (em inglês, padrão do enunciado). Texto livre (descrição,
+impacto, recomendação) em português.
 
-## Rules
-1. Findings sorted **CRITICAL → HIGH → MEDIUM → LOW**; inside a level: security, then
-   architecture, then others. Number them sequentially (`F01`, `F02`, …).
-2. `File:` must hold exact locations: `path:line`, `path:start-end`, or several separated by
-   `, ` — paths relative to the project root. Multiple files → one `File:` line per file.
-3. Every finding references a catalog ID (`AP-xx` / `AP-DEP`) and a playbook pattern (`P-xx`).
-4. *Description* quotes the concrete offending code/value (identifier, literal, query).
-5. Summary counts must equal the number of findings listed per level, and `Total` the sum.
-6. The **Deprecated APIs** section is mandatory, even if empty ("none detected for …").
-7. No finding without evidence; no duplicated finding.
+## Regras
+1. Findings ordenados **CRITICAL → HIGH → MEDIUM → LOW**; dentro de cada nível: segurança,
+   depois arquitetura, depois o resto. Numere sequencialmente (`F01`, `F02`, …).
+2. `File:` deve conter localizações exatas: `caminho:linha`, `caminho:início-fim` ou várias
+   separadas por `, ` — caminhos relativos à raiz do projeto. Vários arquivos → uma linha `File:` por arquivo.
+3. Todo finding referencia um ID do catálogo (`AP-xx` / `AP-DEP`) e um padrão do playbook (`P-xx`).
+4. *Description* cita o código/valor concreto problemático (identificador, literal, query).
+5. As contagens do Summary devem bater com o número de findings listados por nível, e `Total` com a soma.
+6. A seção **Deprecated APIs** é obrigatória, mesmo vazia ("None detected for …").
+7. Nenhum finding sem evidência; nenhum finding duplicado.
 
 ## Template
 
@@ -21,54 +22,54 @@ labels verbatim (English). Free text (descriptions, impact, recommendation) in t
 ================================
 ARCHITECTURE AUDIT REPORT
 ================================
-Project: <project folder name>
-Stack:   <language + version> + <framework + version> (<database / access style>)
+Project: <nome da pasta do projeto>
+Stack:   <linguagem + versão> + <framework + versão> (<banco / estilo de acesso>)
 Files:   <N> analyzed | ~<LOC> lines of code
-Date:    <YYYY-MM-DD>
+Date:    <AAAA-MM-DD>
 
 ## Summary
 CRITICAL: <n> | HIGH: <n> | MEDIUM: <n> | LOW: <n>
 
 | # | Severity | Finding | Catalog | Location |
 |---|---|---|---|---|
-| F01 | CRITICAL | <title> | AP-xx | <first file:line> |
+| F01 | CRITICAL | <título> | AP-xx | <primeiro arquivo:linha> |
 | ... | | | | |
 
 ## Findings
 
-### F01 [CRITICAL] <Title>
-File: <path:lines>
-Catalog: AP-xx — <catalog name>
-Description: <what is wrong, quoting the offending code>
-Impact: <concrete consequence in this project>
-Recommendation: <what to do> (Playbook P-xx)
+### F01 [CRITICAL] <Título>
+File: <caminho:linhas>
+Catalog: AP-xx — <nome no catálogo>
+Description: <o que está errado, citando o código problemático>
+Impact: <consequência concreta neste projeto>
+Recommendation: <o que fazer> (Playbook P-xx)
 
-### F02 [HIGH] <Title>
-File: <path:lines>
-Catalog: AP-xx — <catalog name>
+### F02 [HIGH] <Título>
+File: <caminho:linhas>
+Catalog: AP-xx — <nome no catálogo>
 Description: ...
 Impact: ...
 Recommendation: ... (Playbook P-xx)
 
-<... one block per finding ...>
+<... um bloco por finding ...>
 
 ## Deprecated APIs
 | Location | Deprecated usage | Modern equivalent |
 |---|---|---|
-| <path:line> | <call> | <replacement> |
-<or: "None detected for <stack + versions>.">
+| <caminho:linha> | <chamada> | <substituto> |
+<ou: "None detected for <stack + versões>.">
 
 ## Architecture Notes
-- Current: <architecture label from Phase 1> — <why>
+- Current: <rótulo da arquitetura da Fase 1> — <por quê>
 - Missing layers: <config | models | controllers | views/routes | error handling | composition root>
-- Proposed target: <one-line summary of the MVC target structure>
+- Proposed target: <resumo em uma linha da estrutura MVC alvo>
 
 ================================
 Total: <N> findings
 ================================
 ````
 
-## Example finding (for calibration)
+## Exemplo de finding (para calibração)
 
 ```markdown
 ### F02 [CRITICAL] SQL Injection

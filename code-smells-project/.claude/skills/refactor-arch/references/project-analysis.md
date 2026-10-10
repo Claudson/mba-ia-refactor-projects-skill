@@ -1,49 +1,50 @@
-# Project Analysis — Heuristics (Phase 1)
+# Análise de Projeto — Heurísticas (Fase 1)
 
-Goal: build an accurate, evidence-based picture of the project **before** judging it. Every value
-printed in the Phase 1 block must come from a file you read, not from assumptions.
+Objetivo: montar uma visão precisa e baseada em evidências do projeto **antes** de julgá-lo. Todo
+valor impresso no bloco da Fase 1 deve vir de um arquivo que você leu, nunca de suposições.
 
 ---
 
-## 1. File inventory
+## 1. Inventário de arquivos
 
-Count and read only **source files written by the project authors**.
+Conte e leia apenas **arquivos-fonte escritos pelos autores do projeto**.
 
-| Exclude always | Why |
+| Sempre excluir | Motivo |
 |---|---|
-| `node_modules/`, `venv/`, `.venv/`, `env/`, `vendor/`, `site-packages/` | dependencies |
-| `.git/`, `.claude/`, `.idea/`, `.vscode/` | tooling |
-| `__pycache__/`, `dist/`, `build/`, `target/`, `bin/`, `obj/`, `coverage/` | build artifacts |
-| `*.db`, `*.sqlite*`, `*.log`, lockfiles (`package-lock.json`, `poetry.lock`, `yarn.lock`) | data / generated (read lockfiles only to get exact versions) |
+| `node_modules/`, `venv/`, `.venv/`, `env/`, `vendor/`, `site-packages/` | dependências |
+| `.git/`, `.claude/`, `.idea/`, `.vscode/` | ferramentas |
+| `__pycache__/`, `dist/`, `build/`, `target/`, `bin/`, `obj/`, `coverage/` | artefatos de build |
+| `*.db`, `*.sqlite*`, `*.log`, lockfiles (`package-lock.json`, `poetry.lock`, `yarn.lock`) | dados / gerados (leia lockfiles só para obter versões exatas) |
 
-Source = code files (`.py .js .ts .mjs .cjs .java .kt .go .rb .php .cs .rs`) **plus** seed /
-migration scripts. Count manifests and docs separately (do not add them to "Source files").
-Report `N files analyzed (~LOC lines)` — count LOC with `wc -l` (or equivalent) on the source set.
+Fonte = arquivos de código (`.py .js .ts .mjs .cjs .java .kt .go .rb .php .cs .rs`) **mais**
+scripts de seed / migração. Conte manifestos e documentação separadamente (não somam em
+"Source files"). Informe `N files analyzed (~LOC lines)` — conte LOC com `wc -l` (ou equivalente)
+sobre o conjunto de fontes.
 
 ---
 
-## 2. Language & version
+## 2. Linguagem e versão
 
-| Evidence file | Language | Version source |
+| Arquivo de evidência | Linguagem | Origem da versão |
 |---|---|---|
-| `requirements.txt`, `pyproject.toml`, `setup.py`, `Pipfile` | Python | `python_requires`, `.python-version`, `runtime.txt`, Dockerfile `FROM python:X` — else `python --version` |
-| `package.json` | JavaScript / TypeScript (`tsconfig.json` or `.ts` files → TS) | `engines.node`, `.nvmrc` — else `node --version` |
+| `requirements.txt`, `pyproject.toml`, `setup.py`, `Pipfile` | Python | `python_requires`, `.python-version`, `runtime.txt`, `FROM python:X` no Dockerfile — senão `python --version` |
+| `package.json` | JavaScript / TypeScript (`tsconfig.json` ou arquivos `.ts` → TS) | `engines.node`, `.nvmrc` — senão `node --version` |
 | `pom.xml`, `build.gradle(.kts)` | Java / Kotlin | `maven.compiler.source`, `sourceCompatibility` |
-| `go.mod` | Go | `go` directive |
-| `Gemfile` | Ruby | `ruby` directive |
+| `go.mod` | Go | diretiva `go` |
+| `Gemfile` | Ruby | diretiva `ruby` |
 | `composer.json` | PHP | `require.php` |
 | `*.csproj` | C# | `TargetFramework` |
 | `Cargo.toml` | Rust | `edition` / `rust-version` |
 
-If several manifests exist, the language of the entry point wins; mention the others.
+Se houver vários manifestos, vale a linguagem do entry point; mencione os demais.
 
 ---
 
-## 3. Framework detection
+## 3. Detecção de framework
 
-Look in the manifest **and** confirm with an import/usage in code.
+Procure no manifesto **e** confirme com um import/uso no código.
 
-| Language | Manifest dependency | Code signal | Framework |
+| Linguagem | Dependência no manifesto | Sinal no código | Framework |
 |---|---|---|---|
 | Python | `flask` | `Flask(__name__)`, `@app.route`, `Blueprint(` | Flask |
 | Python | `fastapi` | `FastAPI()`, `@app.get` / `APIRouter` | FastAPI |
@@ -55,102 +56,103 @@ Look in the manifest **and** confirm with an import/usage in code.
 | Ruby | `rails`, `sinatra` | `config/routes.rb`, `get '/' do` | Rails / Sinatra |
 | PHP | `laravel/framework` | `routes/web.php` | Laravel |
 
-**Version:** exact version from the lockfile/installed package if available, else the manifest
-constraint as written (e.g. `Express ^4.18.2`). Never invent a patch number.
+**Versão:** versão exata do lockfile/pacote instalado, se disponível; senão a restrição do
+manifesto como escrita (ex.: `Express ^4.18.2`). Nunca invente um número de patch.
 
-Also list notable libraries (CORS, ORM, validation, auth, HTTP clients, mailers) under *Dependencies*.
+Liste também as bibliotecas relevantes (CORS, ORM, validação, auth, clientes HTTP, e-mail) em *Dependencies*.
 
 ---
 
-## 4. Database & data access
+## 4. Banco de dados e acesso a dados
 
-| Signal | Engine | Access style |
+| Sinal | Engine | Estilo de acesso |
 |---|---|---|
-| `import sqlite3`, `sqlite3.connect(`, npm `sqlite3`/`better-sqlite3`, `:memory:` | SQLite (file or in-memory) | raw SQL |
-| `psycopg2`, `pg`, `postgres://` | PostgreSQL | raw SQL or ORM |
-| `pymysql`, `mysql2`, `mysql://` | MySQL | raw SQL or ORM |
+| `import sqlite3`, `sqlite3.connect(`, npm `sqlite3`/`better-sqlite3`, `:memory:` | SQLite (arquivo ou memória) | SQL puro |
+| `psycopg2`, `pg`, `postgres://` | PostgreSQL | SQL puro ou ORM |
+| `pymysql`, `mysql2`, `mysql://` | MySQL | SQL puro ou ORM |
 | `pymongo`, `mongoose`, `mongodb://` | MongoDB | driver / ODM |
-| `flask_sqlalchemy`, `sqlalchemy`, `db.Model` | via SQLAlchemy URI | ORM |
-| `sequelize`, `typeorm`, `prisma`, `knex` | via config | ORM / query builder |
+| `flask_sqlalchemy`, `sqlalchemy`, `db.Model` | conforme URI do SQLAlchemy | ORM |
+| `sequelize`, `typeorm`, `prisma`, `knex` | conforme config | ORM / query builder |
 
-Tables/models: collect from `CREATE TABLE` statements, `__tablename__`, `db.Model`
-subclasses, ORM model definitions, or migration files. Note where the schema is created
-(e.g. "created inside `get_db()` on first call", "`db.create_all()` at import time").
-
----
-
-## 5. Entry point & runtime
-
-- Entry point: `if __name__ == "__main__"` / `app.run(`, `package.json` `main`/`scripts.start`,
-  `app.listen(`, `main()` in Go/Java. Record port and host.
-- How to run: project README first, then manifest scripts.
-- **Interpreter / dependencies:** if a local virtualenv exists (`venv/`, `.venv/`), run with its
-  interpreter (`venv/Scripts/python` on Windows, `venv/bin/python` elsewhere); for Node, run
-  `npm install` only if `node_modules/` is missing. If dependencies are missing, install them from
-  the manifest before the baseline — never into the global interpreter without asking.
-- **Runtime state** (needed for Phase 3 baseline): identify DB files and seed scripts.
-  - A DB file that is **git-ignored** and **recreated automatically** (schema + seed on boot, or
-    by a documented seed script) is throwaway dev state: it may be deleted before each validation
-    run so baseline and post-refactor runs start from identical data.
-  - Never delete a DB file that is versioned or not reproducible — copy it to the temp dir and
-    restore it instead.
-  - In-memory DBs reset on every boot — nothing to do.
-- Note debug reloaders (Flask `debug=True`, nodemon): they spawn a child process — when stopping
-  the app, kill the whole process tree / everything listening on the port.
+Tabelas/models: colete de `CREATE TABLE`, `__tablename__`, subclasses de `db.Model`, definições
+de models do ORM ou arquivos de migração. Anote onde o schema é criado (ex.: "criado dentro de
+`get_db()` na primeira chamada", "`db.create_all()` no import").
 
 ---
 
-## 6. Endpoint inventory
+## 5. Entry point e runtime
 
-Find every route registration and record `METHOD PATH → handler file:line`:
+- Entry point: `if __name__ == "__main__"` / `app.run(`, `main`/`scripts.start` do `package.json`,
+  `app.listen(`, `main()` em Go/Java. Registre porta e host.
+- Como executar: primeiro o README do projeto, depois os scripts do manifesto.
+- **Interpretador / dependências:** se existir um virtualenv local (`venv/`, `.venv/`), execute
+  com o interpretador dele (`venv/Scripts/python` no Windows, `venv/bin/python` nos demais); em
+  Node, rode `npm install` apenas se `node_modules/` não existir. Se faltarem dependências,
+  instale-as a partir do manifesto antes do baseline — nunca no interpretador global sem perguntar.
+- **Estado de runtime** (necessário para o baseline da Fase 3): identifique arquivos de banco e
+  scripts de seed.
+  - Um arquivo de banco **ignorado pelo git** e **recriado automaticamente** (schema + seed no
+    boot, ou por um script de seed documentado) é estado descartável: pode ser apagado antes de
+    cada rodada de validação para que baseline e pós-refatoração partam dos mesmos dados.
+  - Nunca apague um arquivo de banco versionado ou não reproduzível — copie-o para o diretório
+    temporário e restaure-o depois.
+  - Bancos em memória resetam a cada boot — nada a fazer.
+- Atenção a reloaders de debug (Flask `debug=True`, nodemon): eles criam um processo filho — ao
+  parar a aplicação, encerre a árvore de processos inteira / tudo que escuta na porta.
 
-| Stack | Patterns to search |
+---
+
+## 6. Inventário de endpoints
+
+Encontre todo registro de rota e anote `MÉTODO PATH → handler arquivo:linha`:
+
+| Stack | Padrões a buscar |
 |---|---|
-| Flask | `@app.route(`, `@<bp>.route(`, `app.add_url_rule(`, `methods=[...]` (default GET), blueprint `url_prefix` |
+| Flask | `@app.route(`, `@<bp>.route(`, `app.add_url_rule(`, `methods=[...]` (padrão GET), `url_prefix` de blueprint |
 | FastAPI | `@app.get/post/put/delete/patch(`, `APIRouter(prefix=` |
-| Express | `app.get/post/put/delete/patch(`, `router.<verb>(`, `app.use('/prefix', router)` |
-| Django | `path(` / `re_path(` in `urls.py` |
+| Express | `app.get/post/put/delete/patch(`, `router.<verbo>(`, `app.use('/prefixo', router)` |
+| Django | `path(` / `re_path(` em `urls.py` |
 | Spring | `@GetMapping`, `@PostMapping`, `@RequestMapping` |
 
-Also note sample requests the project ships (`api.http`, Postman collections, README curl
-examples) — reuse their payloads for the baseline.
+Anote também requisições de exemplo que o projeto fornece (`api.http`, coleções Postman, curl no
+README) — reutilize esses payloads no baseline.
 
 ---
 
-## 7. Domain inference
+## 7. Inferência de domínio
 
-Derive the domain from **entity names** (tables/models), route nouns and seed data. Write one
-line: `<domain> (<main entities>)` — e.g. "E-commerce API (produtos, usuários, pedidos)",
-"LMS with checkout (courses, enrollments, payments)", "Task manager (tasks, users, categories)".
-Keep entity names in the language used in the code.
+Derive o domínio a partir dos **nomes das entidades** (tabelas/models), substantivos das rotas e
+dados de seed. Escreva uma linha: `<domínio> (<entidades principais>)` — ex.: "API de E-commerce
+(produtos, usuários, pedidos)", "LMS com checkout (courses, enrollments, payments)", "Task manager
+(tasks, users, categories)". Mantenha os nomes das entidades no idioma do código.
 
 ---
 
-## 8. Architecture classification
+## 8. Classificação da arquitetura
 
-Classify the **current** architecture with one of these labels + a one-line justification:
+Classifique a arquitetura **atual** com um destes rótulos + justificativa em uma linha:
 
-| Label | Signals |
+| Rótulo | Sinais |
 |---|---|
-| **Monolithic / no layers** | ≤ a handful of files; routes, SQL and business rules in the same file or the same functions; one module per *technical* concern only by name (e.g. `models.py` that also holds business rules for every domain) |
-| **God Class** | One class/module wires DB connection, schema, routes and business logic (e.g. a `Manager` class with `initDb()` + `setupRoutes(app)`) |
-| **Partially layered** | Folders like `models/`, `routes/`, `services/`, `utils/` exist **but** routes still hold business logic/queries, services are unused, or config is inline |
-| **Layered MVC** | Separate config, models, controllers, routes/views, error handling, composition root — and they are respected |
+| **Monolítica / sem camadas** | Poucos arquivos; rotas, SQL e regras de negócio no mesmo arquivo ou nas mesmas funções; separação só no nome (ex.: um `models.py` que também contém regras de negócio de todos os domínios) |
+| **God Class** | Uma classe/módulo cuida de conexão, schema, rotas e regra de negócio (ex.: uma classe `Manager` com `initDb()` + `setupRoutes(app)`) |
+| **Parcialmente em camadas** | Existem pastas como `models/`, `routes/`, `services/`, `utils/` **mas** as rotas ainda têm regra de negócio/queries, os services não são usados ou a config está inline |
+| **MVC em camadas** | Config, models, controllers, routes/views, tratamento de erros e composition root separados — e respeitados |
 
-Record for Phase 3 which layers **exist** and which are **missing** — this drives the strategy
-(see `mvc-guidelines.md` § Strategy).
+Registre para a Fase 3 quais camadas **existem** e quais **faltam** — isso define a estratégia
+(ver `mvc-guidelines.md` § Estratégia).
 
 ---
 
-## 9. Output checklist (Phase 1)
+## 9. Checklist de saída (Fase 1)
 
-- [ ] Language + version
-- [ ] Framework + version
-- [ ] Main dependencies
-- [ ] Database engine + access style
-- [ ] Domain (entities)
-- [ ] Architecture label + justification
-- [ ] Entry point + port
-- [ ] Source file count + LOC (matches reality)
-- [ ] Tables/models
-- [ ] Endpoint inventory (count + table)
+- [ ] Linguagem + versão
+- [ ] Framework + versão
+- [ ] Dependências principais
+- [ ] Engine de banco + estilo de acesso
+- [ ] Domínio (entidades)
+- [ ] Rótulo da arquitetura + justificativa
+- [ ] Entry point + porta
+- [ ] Quantidade de arquivos-fonte + LOC (condizente com a realidade)
+- [ ] Tabelas/models
+- [ ] Inventário de endpoints (quantidade + tabela)

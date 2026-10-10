@@ -1,224 +1,223 @@
-# Anti-Patterns Catalog (Phase 2)
+# Catálogo de Anti-Patterns (Fase 2)
 
-Each entry has: **ID**, **severity**, **what it is**, **detection signals** (concrete things to
-search for — regexes are starting points, always confirm by reading the code), **false
-positives** to avoid, and the **playbook pattern** that fixes it (`refactoring-playbook.md`).
+Cada entrada tem: **ID**, **severidade**, **o que é**, **sinais de detecção** (o que buscar
+concretamente — as regex são ponto de partida, sempre confirme lendo o código), **falsos
+positivos** a evitar e o **padrão do playbook** que corrige (`refactoring-playbook.md`).
 
-## Severity scale (from MVC / SOLID impact)
+## Escala de severidade (baseada em impacto MVC / SOLID)
 
-| Level | Meaning | Typical examples |
+| Nível | Significado | Exemplos típicos |
 |---|---|---|
-| **CRITICAL** | Security hole or complete absence of separation of concerns; exposes data or lets an attacker act | Hardcoded secrets, SQL injection, plaintext/weak password hashing, sensitive data in responses/logs, unauthenticated destructive endpoints, God Class |
-| **HIGH** | Strong MVC/SOLID violation that makes maintenance and testing very hard | Business logic in routes/controllers, no DI / tight coupling, global mutable state, non-atomic multi-step writes, callback hell, debug mode on |
-| **MEDIUM** | Standardization, duplication, moderate performance, missing validation | N+1 queries, duplicated logic, missing validation, swallowed errors, deprecated APIs, orphaned data on delete |
-| **LOW** | Readability | Magic numbers, poor names, `print` logging, unused imports, verbose conditionals |
+| **CRITICAL** | Falha de segurança ou ausência completa de separação de responsabilidades; expõe dados ou permite ação de atacante | Segredos hardcoded, SQL injection, senha em texto puro/hash fraco, dados sensíveis em respostas/logs, endpoints destrutivos sem autenticação, God Class |
+| **HIGH** | Forte violação de MVC/SOLID que dificulta muito manutenção e testes | Regra de negócio em rotas/controllers, sem DI / alto acoplamento, estado global mutável, escritas multi-etapa não atômicas, callback hell, modo debug ligado |
+| **MEDIUM** | Padronização, duplicação, performance moderada, validação ausente | Queries N+1, lógica duplicada, validação ausente, erros engolidos, APIs deprecated, dados órfãos ao apagar |
+| **LOW** | Legibilidade | Magic numbers, nomes ruins, log com `print`, imports não usados, condicionais verbosas |
 
-### Severity rules
-- Rate by **actual impact in this code**, not by the name of the pattern. A hardcoded *dev
-  default* that is overridable by env var is LOW; a hardcoded *production* key is CRITICAL.
-- A security issue reachable from a public endpoint is never below HIGH.
-- The same anti-pattern in many places is **one** finding with all locations, at the severity of
-  its worst occurrence.
-- When unsure between two levels, pick the higher one and say why in *Impact*.
+### Regras de severidade
+- Classifique pelo **impacto real neste código**, não pelo nome do padrão. Um *default de
+  desenvolvimento* hardcoded que pode ser sobrescrito por variável de ambiente é LOW; uma chave
+  *de produção* hardcoded é CRITICAL.
+- Um problema de segurança acessível por endpoint público nunca fica abaixo de HIGH.
+- O mesmo anti-pattern em vários lugares é **um** finding com todas as localizações, na
+  severidade da pior ocorrência.
+- Na dúvida entre dois níveis, escolha o mais alto e justifique em *Impact*.
 
 ---
 
 ## CRITICAL
 
-### AP-01 — Hardcoded Credentials / Secrets
-Secrets (secret keys, DB passwords, API/payment keys, SMTP passwords, tokens) as literals in code.
-- **Signals:** `SECRET_KEY\s*=\s*['"]`, `config\[['"]SECRET_KEY['"]\]\s*=\s*['"]`,
+### AP-01 — Credenciais / Segredos Hardcoded
+Segredos (secret keys, senhas de banco, chaves de API/pagamento, senhas SMTP, tokens) como literais no código.
+- **Sinais:** `SECRET_KEY\s*=\s*['"]`, `config\[['"]SECRET_KEY['"]\]\s*=\s*['"]`,
   `(password|passwd|pwd|pass|secret|token|api[_-]?key|apikey)\w*\s*[:=]\s*['"][^'"]+['"]`,
-  `pk_live_|sk_live_|AKIA[0-9A-Z]{16}`, connection strings with `user:pass@`,
-  `server.login(` with literal args; config objects (`const config = { dbPass: "..." }`).
-- **Also:** secrets echoed back by an endpoint (e.g. `/health` returning `secret_key`).
-- **False positives:** placeholders in `.env.example`, test fixtures, seed data for demo users
-  (those are AP-03 if stored in plaintext).
-- **Fix:** Playbook **P-01** (externalize config).
+  `pk_live_|sk_live_|AKIA[0-9A-Z]{16}`, connection strings com `user:pass@`,
+  `server.login(` com argumentos literais; objetos de config (`const config = { dbPass: "..." }`).
+- **Também:** segredos devolvidos por um endpoint (ex.: `/health` retornando `secret_key`).
+- **Falsos positivos:** placeholders em `.env.example`, fixtures de teste, dados de seed de
+  usuários de demonstração (esses são AP-03 se armazenados em texto puro).
+- **Correção:** Playbook **P-01** (externalizar configuração).
 
 ### AP-02 — SQL Injection
-User-controlled values concatenated/interpolated into SQL.
-- **Signals:** `execute\(\s*["'].*["']\s*\+`, `"... WHERE ... = '" + var`, `+ str(id)` inside SQL,
-  f-strings / `%` / `.format(` building SQL (`f"SELECT ... {x}"`), JS template literals in
-  `db.run/get/all/query(\`...${x}...\`)`, dynamic `LIKE '%" + term + "%'`.
-- **False positives:** placeholders (`?`, `%s`, `:name`, `$1`) with a params tuple/array; ORM
-  query builders (`filter(Model.col == x)`, `.like(f'%{q}%')` passes a bound parameter).
-- **Fix:** **P-02** (parameterized queries).
+Valores controlados pelo usuário concatenados/interpolados em SQL.
+- **Sinais:** `execute\(\s*["'].*["']\s*\+`, `"... WHERE ... = '" + var`, `+ str(id)` dentro de
+  SQL, f-strings / `%` / `.format(` montando SQL (`f"SELECT ... {x}"`), template literals JS em
+  `db.run/get/all/query(\`...${x}...\`)`, `LIKE '%" + termo + "%'` dinâmico.
+- **Falsos positivos:** placeholders (`?`, `%s`, `:nome`, `$1`) com tupla/array de parâmetros;
+  query builders de ORM (`filter(Model.col == x)`, `.like(f'%{q}%')` passa parâmetro vinculado).
+- **Correção:** **P-02** (queries parametrizadas).
 
-### AP-03 — Insecure Password Storage
-Passwords stored in plaintext or hashed with fast/broken/home-made algorithms.
-- **Signals:** columns `senha`/`password`/`pass` written straight from the request; comparisons
-  `WHERE senha = ?` / `password == input`; `hashlib.md5|sha1|sha256(` on passwords;
-  `crypto.createHash('md5'|'sha1')`; custom functions (`base64` loops, `badCrypto`, reversible
-  encodings); default passwords like `"123456"` assigned when missing.
-- **Fix:** **P-07** (strong password hashing: `werkzeug.security`, `bcrypt`, `argon2`, Node
-  `crypto.scrypt`).
+### AP-03 — Armazenamento Inseguro de Senhas
+Senhas armazenadas em texto puro ou com hash rápido/quebrado/caseiro.
+- **Sinais:** colunas `senha`/`password`/`pass` gravadas direto da requisição; comparações
+  `WHERE senha = ?` / `password == input`; `hashlib.md5|sha1|sha256(` em senhas;
+  `crypto.createHash('md5'|'sha1')`; funções caseiras (loops de `base64`, `badCrypto`,
+  codificações reversíveis); senhas padrão como `"123456"` atribuídas quando ausentes.
+- **Correção:** **P-07** (hash forte: `werkzeug.security`, `bcrypt`, `argon2`, `crypto.scrypt` do Node).
 
-### AP-04 — Sensitive Data Exposure
-Secrets or personal/financial data leaving the system through responses or logs.
-- **Signals:** serializers/`to_dict()`/`SELECT *` mapped to JSON including `password`/`senha`/
-  `pass`; responses with `secret_key`, `db_path`, `debug`; logs printing card numbers, passwords,
-  tokens, gateway keys (`console.log(\`...${card}...\`)`); `str(e)` / stack traces returned to
-  the client on 500.
-- **Fix:** **P-08** (safe serialization / redaction) + **P-10** (central error handler).
+### AP-04 — Exposição de Dados Sensíveis
+Segredos ou dados pessoais/financeiros saindo do sistema por respostas ou logs.
+- **Sinais:** serializers/`to_dict()`/`SELECT *` mapeados para JSON incluindo
+  `password`/`senha`/`pass`; respostas com `secret_key`, `db_path`, `debug`; logs imprimindo
+  números de cartão, senhas, tokens, chaves de gateway (`console.log(\`...${card}...\`)`);
+  `str(e)` / stack traces devolvidos ao cliente em erros 500.
+- **Correção:** **P-08** (serialização segura / mascaramento) + **P-10** (tratamento de erros centralizado).
 
-### AP-05 — Unprotected Dangerous Endpoints / Broken Authentication
-Endpoints that execute arbitrary code/SQL, wipe data or perform admin actions with no auth; fake
-authentication.
-- **Signals:** routes like `/admin/*`, `/reset`, `/query`, `/exec`, `/debug` with no auth
-  check; `cursor.execute(request...['sql'])`; `eval(`/`exec(` on input; tokens like
-  `'fake-jwt-token-' + id`; destructive `DELETE` routes with no ownership/role check.
-- **Fix:** **P-13** (guard dangerous endpoints).
+### AP-05 — Endpoints Perigosos sem Proteção / Autenticação Quebrada
+Endpoints que executam código/SQL arbitrário, apagam dados ou fazem ações administrativas sem
+autenticação; autenticação falsa.
+- **Sinais:** rotas como `/admin/*`, `/reset`, `/query`, `/exec`, `/debug` sem verificação de
+  auth; `cursor.execute(request...['sql'])`; `eval(`/`exec(` sobre entrada; tokens como
+  `'fake-jwt-token-' + id`; rotas `DELETE` destrutivas sem checagem de dono/perfil.
+- **Correção:** **P-13** (proteger endpoints perigosos).
 
 ### AP-06 — God Class / God Module
-A single class or module owns several responsibilities: DB connection + schema + seed + routing +
-business rules + formatting, for several domains.
-- **Signals:** one file > ~250 LOC touching ≥ 3 domains; a class with methods like `initDb()`
-  **and** `setupRoutes(app)`; `models.py` that contains SQL, business rules (stock, totals,
-  discounts) and JSON formatting; route handlers defined inside the data class.
-- **Fix:** **P-03** (split into Model / Controller / Routes) + **P-04**.
+Uma única classe ou módulo com várias responsabilidades: conexão + schema + seed + roteamento +
+regras de negócio + formatação, para vários domínios.
+- **Sinais:** um arquivo com mais de ~250 LOC tocando ≥ 3 domínios; uma classe com métodos como
+  `initDb()` **e** `setupRoutes(app)`; um `models.py` com SQL, regras de negócio (estoque, totais,
+  descontos) e formatação JSON; handlers de rota definidos dentro da classe de dados.
+- **Correção:** **P-03** (separar em Model / Controller / Routes) + **P-04**.
 
 ---
 
 ## HIGH
 
-### AP-07 — Debug Mode / Insecure Runtime Config
-- **Signals:** `debug=True`, `app.config["DEBUG"] = True`, `app.run(host="0.0.0.0", debug=True)`,
-  `NODE_ENV` ignored, permissive `CORS(app)` / `cors()` with `*` on an API with credentials.
-- **Severity note:** CRITICAL if the debug console/stack traces are reachable publicly *and*
-  combined with secrets; otherwise HIGH.
-- **Fix:** **P-01** (config per environment).
+### AP-07 — Modo Debug / Configuração de Runtime Insegura
+- **Sinais:** `debug=True`, `app.config["DEBUG"] = True`, `app.run(host="0.0.0.0", debug=True)`,
+  `NODE_ENV` ignorado, `CORS(app)` / `cors()` permissivo com `*` numa API com credenciais.
+- **Nota de severidade:** CRITICAL se o console de debug/stack traces forem acessíveis
+  publicamente *e* combinados com segredos; senão HIGH.
+- **Correção:** **P-01** (config por ambiente).
 
-### AP-08 — Business Logic in Routes / Fat Controllers
-Route handlers (views) contain validation rules, calculations, multi-step workflows, queries and
-serialization instead of delegating.
-- **Signals:** handler functions > ~30 lines; `Model.query...`/`db.execute` inside a route;
-  arithmetic on prices/totals/stats inside handlers; notification/email/payment steps inside the
-  handler; a `services/` folder that exists but is not imported by routes.
-- **Fix:** **P-04** (extract controller/service).
+### AP-08 — Regra de Negócio nas Rotas / Fat Controllers
+Handlers de rota (views) contêm regras de validação, cálculos, fluxos multi-etapa, queries e
+serialização em vez de delegar.
+- **Sinais:** handlers com mais de ~30 linhas; `Model.query...`/`db.execute` dentro de rota;
+  aritmética de preços/totais/estatísticas nos handlers; etapas de notificação/e-mail/pagamento
+  dentro do handler; uma pasta `services/` que existe mas não é importada pelas rotas.
+- **Correção:** **P-04** (extrair controller/service).
 
-### AP-09 — Tight Coupling / No Dependency Injection
-Layers instantiate or import concrete infrastructure directly, so they cannot be tested in
-isolation.
-- **Signals:** `new sqlite3.Database(` inside a domain class constructor; every model function
-  calling a module-level `get_db()` that creates the schema; controllers importing the DB module;
-  services instantiating SMTP clients in `__init__`.
-- **Fix:** **P-03** / **P-06** (composition root wires dependencies).
+### AP-09 — Alto Acoplamento / Sem Injeção de Dependência
+Camadas instanciam ou importam infraestrutura concreta diretamente, impedindo testes isolados.
+- **Sinais:** `new sqlite3.Database(` no construtor de uma classe de domínio; toda função de
+  model chamando um `get_db()` de módulo que também cria o schema; controllers importando o
+  módulo de banco; services instanciando clientes SMTP no `__init__`.
+- **Correção:** **P-03** / **P-06** (composition root injeta as dependências).
 
-### AP-10 — Global Mutable State
-- **Signals:** module-level mutable variables mutated at runtime (`global x`, `let cache = {}`,
-  `let total = 0`, lists appended in a singleton service), shared DB connection with
+### AP-10 — Estado Global Mutável
+- **Sinais:** variáveis mutáveis de módulo alteradas em runtime (`global x`, `let cache = {}`,
+  `let total = 0`, listas acumuladas num service singleton), conexão de banco compartilhada com
   `check_same_thread=False`.
-- **False positives:** immutable constants (`UPPER_CASE` tuples/frozen config).
-- **Fix:** **P-06**.
+- **Falsos positivos:** constantes imutáveis (tuplas/config congelada em `UPPER_CASE`).
+- **Correção:** **P-06**.
 
-### AP-11 — Non-atomic Multi-step Writes / Callback Hell
-A workflow writes to several tables without a transaction, or nests ≥ 3 levels of callbacks.
-- **Signals:** sequential `INSERT`/`UPDATE` in a loop followed by a single `commit()` with early
-  `return` paths in between; `db.run(... function(err){ db.run(... function(err){ ...` pyramids;
-  manual counters to know when async loops finished (`pending--; if (pending === 0)`).
-- **Fix:** **P-09** (async/await + transaction).
+### AP-11 — Escritas Multi-etapa Não Atômicas / Callback Hell
+Um fluxo grava em várias tabelas sem transação, ou aninha ≥ 3 níveis de callbacks.
+- **Sinais:** `INSERT`/`UPDATE` sequenciais num loop seguidos de um único `commit()` com
+  `return` antecipado no meio; pirâmides `db.run(... function(err){ db.run(... function(err){ ...`;
+  contadores manuais para saber quando loops assíncronos terminaram (`pending--; if (pending === 0)`).
+- **Correção:** **P-09** (async/await + transação).
 
 ---
 
 ## MEDIUM
 
-### AP-12 — N+1 Queries
-- **Signals:** a query inside a `for`/`forEach` over rows of another query; ORM `Model.query.get(x.fk)`
-  or lazy relationship access (`len(user.tasks)`) inside a loop; `COUNT(*)` per row in a loop;
-  several `filter_by(status=...).count()` that could be one `GROUP BY`.
-- **Fix:** **P-05** (JOIN / eager loading / aggregate query).
+### AP-12 — Queries N+1
+- **Sinais:** uma query dentro de `for`/`forEach` sobre linhas de outra query;
+  `Model.query.get(x.fk)` do ORM ou acesso a relacionamento lazy (`len(user.tasks)`) dentro de
+  loop; `COUNT(*)` por linha em loop; vários `filter_by(status=...).count()` que poderiam ser um `GROUP BY`.
+- **Correção:** **P-05** (JOIN / eager loading / query agregada).
 
-### AP-13 — Duplicated Code / Logic
-- **Signals:** same row→dict mapping repeated; the same validation block in create and update;
-  the same business rule (e.g. "is overdue") re-implemented in several handlers while a model
-  method already exists; helper functions/constants defined but not used while the logic is
-  duplicated elsewhere.
-- **Fix:** **P-12** (single source of truth: model method / validator / serializer).
+### AP-13 — Código / Lógica Duplicada
+- **Sinais:** mesmo mapeamento linha→dict repetido; o mesmo bloco de validação em criar e
+  atualizar; a mesma regra de negócio (ex.: "está atrasada") reimplementada em vários handlers
+  enquanto já existe um método no model; funções auxiliares/constantes definidas e não usadas
+  enquanto a lógica está duplicada em outro lugar.
+- **Correção:** **P-12** (fonte única: método de model / validador / serializer).
 
-### AP-14 — Missing or Weak Input Validation
-- **Signals:** `request.get_json()` / `req.body` fields used without type/range checks; `None`
-  body not handled before `data['x']`; numeric comparisons on unvalidated input (`priority < 1`
-  with a string → 500); IDs from the client trusted without existence checks.
-- **Fix:** **P-12** (validators at the controller boundary).
+### AP-14 — Validação de Entrada Ausente ou Fraca
+- **Sinais:** campos de `request.get_json()` / `req.body` usados sem checagem de tipo/faixa;
+  body `None` não tratado antes de `data['x']`; comparações numéricas sobre entrada não validada
+  (`priority < 1` com string → 500); IDs vindos do cliente usados sem checar existência.
+- **Correção:** **P-12** (validadores na borda do controller).
 
-### AP-15 — Swallowed / Inconsistent Error Handling
-- **Signals:** bare `except:` / `except Exception: pass`; `try/except` returning `str(e)` in every
-  handler; Node callbacks ignoring `err`; mixed response formats for errors (plain text vs JSON);
-  no central error handler (`@app.errorhandler`, Express error middleware).
-- **Fix:** **P-10** (custom exceptions + centralized error middleware).
+### AP-15 — Tratamento de Erros Engolido / Inconsistente
+- **Sinais:** `except:` genérico / `except Exception: pass`; `try/except` devolvendo `str(e)` em
+  todo handler; callbacks Node ignorando `err`; formatos de erro misturados (texto puro vs JSON);
+  sem handler central (`@app.errorhandler`, middleware de erro do Express).
+- **Correção:** **P-10** (exceções customizadas + middleware de erro centralizado).
 
-### AP-16 — Orphaned Data / Missing Referential Integrity
-- **Signals:** deleting a parent row without handling children (no FK `ON DELETE`, no cascade,
-  no check); responses that admit dirty data; FKs declared without constraints.
-- **Fix:** **P-09** (transaction + cascade or guard) — keep the endpoint's status/shape.
+### AP-16 — Dados Órfãos / Integridade Referencial Ausente
+- **Sinais:** apagar uma linha pai sem tratar as filhas (sem FK `ON DELETE`, sem cascade, sem
+  checagem); respostas que admitem dados sujos; FKs declaradas sem constraints.
+- **Correção:** **P-09** (transação + cascade ou bloqueio) — mantendo status/formato do endpoint.
 
-### AP-DEP — Deprecated / Obsolete APIs
-Use of APIs deprecated in the **detected** version of the language/framework/library. Always
-recommend the modern equivalent. Confirm versions from Phase 1 before flagging.
+### AP-DEP — APIs Deprecated / Obsoletas
+Uso de APIs deprecated na versão **detectada** da linguagem/framework/biblioteca. Sempre
+recomende o equivalente moderno. Confirme as versões da Fase 1 antes de apontar.
 
-| Stack | Deprecated usage (signal) | Modern equivalent |
+| Stack | Uso deprecated (sinal) | Equivalente moderno |
 |---|---|---|
 | Python ≥ 3.12 | `datetime.utcnow()`, `datetime.utcfromtimestamp()` | `datetime.now(timezone.utc)`, `datetime.fromtimestamp(ts, timezone.utc)` |
-| SQLAlchemy ≥ 2.0 / Flask-SQLAlchemy ≥ 3.0 | `Model.query.get(id)` (legacy Query API) | `db.session.get(Model, id)` / `db.get_or_404(Model, id)` |
-| SQLAlchemy ≥ 2.0 | `Model.query.filter(...).all()` (legacy, still works) | `db.session.execute(db.select(Model).where(...)).scalars().all()` — flag as LOW unless mixed with `.get()` |
-| Flask ≥ 2.3 | `@app.before_first_request`, `flask.json.JSONEncoder`, `app.json_encoder` | app factory / `with app.app_context()`, `app.json` provider |
-| Flask / Werkzeug | `from werkzeug import secure_filename` (old paths), `flask.escape`, `flask.Markup` | `werkzeug.utils.secure_filename`, `markupsafe.escape`, `markupsafe.Markup` |
-| Python | `imp`, `distutils`, `asyncore`, `smtpd` modules; `typing.List` style in ≥ 3.9 (LOW) | `importlib`, `setuptools`, `asyncio`, builtin generics |
+| SQLAlchemy ≥ 2.0 / Flask-SQLAlchemy ≥ 3.0 | `Model.query.get(id)` (API Query legada) | `db.session.get(Model, id)` / `db.get_or_404(Model, id)` |
+| SQLAlchemy ≥ 2.0 | `Model.query.filter(...).all()` (legado, ainda funciona) | `db.session.execute(db.select(Model).where(...)).scalars().all()` — LOW, salvo se misturado com `.get()` |
+| Flask ≥ 2.3 | `@app.before_first_request`, `flask.json.JSONEncoder`, `app.json_encoder` | app factory / `with app.app_context()`, provider `app.json` |
+| Flask / Werkzeug | `from werkzeug import secure_filename` (caminhos antigos), `flask.escape`, `flask.Markup` | `werkzeug.utils.secure_filename`, `markupsafe.escape`, `markupsafe.Markup` |
+| Python | módulos `imp`, `distutils`, `asyncore`, `smtpd`; `typing.List` em ≥ 3.9 (LOW) | `importlib`, `setuptools`, `asyncio`, genéricos nativos |
 | Node.js | `new Buffer(x)` | `Buffer.from(x)` / `Buffer.alloc(n)` |
 | Node.js | `url.parse()`, `querystring` | `new URL()`, `URLSearchParams` |
 | Node.js | `crypto.createCipher()`, `fs.exists()` | `crypto.createCipheriv()`, `fs.existsSync()` / `fs.promises.access()` |
-| Node.js | callback-style APIs where promise versions exist (`fs.readFile` cb, `util.promisify` not used) | `fs/promises`, `async/await` (LOW unless it causes callback hell → AP-11) |
+| Node.js | APIs no estilo callback onde há versão com promise (`fs.readFile` com cb, sem `util.promisify`) | `fs/promises`, `async/await` (LOW, salvo se causar callback hell → AP-11) |
 | Express 4 | `req.param()`, `res.send(status)`, `res.json(status, obj)`, `app.del()`, `bodyParser()` | `req.params`/`req.query`/`req.body`, `res.sendStatus()`, `res.status(s).json(obj)`, `app.delete()`, `express.json()` |
-| JS | `var` declarations, `arguments` object | `const`/`let`, rest params (LOW) |
-| npm packages | packages marked deprecated by npm at install (e.g. `request`) or unmaintained native modules | maintained alternative |
+| JS | declarações `var`, objeto `arguments` | `const`/`let`, rest params (LOW) |
+| pacotes npm | pacotes marcados como deprecated pelo npm na instalação (ex.: `request`) ou módulos nativos sem manutenção | alternativa mantida |
 
-- **Severity:** MEDIUM when the API emits deprecation warnings or is removed in the next major;
-  LOW for style-only obsolescence.
-- **Fix:** **P-11**.
-- If none apply, the report must still say *"Deprecated APIs: none detected for <stack+versions>"*.
+- **Severidade:** MEDIUM quando a API emite warnings de deprecação ou será removida na próxima
+  major; LOW para obsolescência apenas de estilo.
+- **Correção:** **P-11**.
+- Se nada se aplicar, o relatório ainda deve dizer *"None detected for <stack + versões>."*
 
 ---
 
 ## LOW
 
-### AP-17 — `print` / `console.log` as Logging
-- **Signals:** `print(` / `console.log(` in request paths for errors/events; banners on startup.
-- **Fix:** **P-14** (logger module).
+### AP-17 — `print` / `console.log` como Log
+- **Sinais:** `print(` / `console.log(` em fluxos de requisição para erros/eventos; banners no startup.
+- **Correção:** **P-14** (módulo de logger).
 
 ### AP-18 — Magic Numbers / Strings
-- **Signals:** unexplained numeric thresholds (`> 10000`, `* 0.1`, `len(x) < 4`, `range 1..5`),
-  status lists inline (`['pending', 'done', ...]`) repeated, string rules (`startsWith("4")`),
-  constants defined in a module but not used.
-- **Fix:** **P-12** (named constants / enums in the model or config).
+- **Sinais:** limites numéricos sem explicação (`> 10000`, `* 0.1`, `len(x) < 4`, faixa 1..5),
+  listas de status inline (`['pending', 'done', ...]`) repetidas, regras em string
+  (`startsWith("4")`), constantes definidas num módulo mas não usadas.
+- **Correção:** **P-12** (constantes nomeadas / enums no model ou config).
 
-### AP-19 — Poor Naming
-- **Signals:** one-letter or cryptic names (`u`, `e`, `p`, `cc`, `cid`, `d`), shadowing built-ins
-  (`id`, `type`, `list`), misleading names (`badCrypto`, `AppManager`, `utils` holding config).
-- **Fix:** rename while moving code (P-03/P-04).
+### AP-19 — Nomenclatura Ruim
+- **Sinais:** nomes de uma letra ou crípticos (`u`, `e`, `p`, `cc`, `cid`, `d`), sombreando
+  built-ins (`id`, `type`, `list`), nomes enganosos (`badCrypto`, `AppManager`, `utils` guardando config).
+- **Correção:** renomear ao mover o código (P-03/P-04).
 
-### AP-20 — Dead Code / Unused Imports
-- **Signals:** imports never referenced (`import os, sys, json`), functions/classes never called,
-  exported-but-unused variables, commented-out code.
-- **Fix:** delete.
+### AP-20 — Código Morto / Imports Não Usados
+- **Sinais:** imports nunca referenciados (`import os, sys, json`), funções/classes nunca
+  chamadas, variáveis exportadas e não usadas, código comentado.
+- **Correção:** apagar.
 
-### AP-21 — Verbose / Redundant Conditionals
-- **Signals:** `if cond: return True else: return False`; nested `if` pyramids that are a single
-  boolean expression; `type(x) == list`.
-- **Fix:** return the expression; `isinstance`.
+### AP-21 — Condicionais Verbosas / Redundantes
+- **Sinais:** `if cond: return True else: return False`; pirâmides de `if` aninhados que são uma
+  única expressão booleana; `type(x) == list`.
+- **Correção:** retornar a expressão; `isinstance`.
 
 ---
 
-## Quick scan commands (adapt to the stack)
+## Comandos de varredura rápida (adapte à stack)
 
 ```bash
-# secrets
+# segredos
 grep -rnEi "(secret|password|passwd|pwd|pass|token|api_?key)\w*\s*[:=]\s*['\"][^'\"]{3,}" --include=*.{py,js,ts} .
-# SQL concatenation
+# concatenação de SQL
 grep -rnE "(execute|run|get|all|query)\(\s*[\"'\`].*(SELECT|INSERT|UPDATE|DELETE).*([\"']\s*\+|\\$\{|\{)" --include=*.{py,js,ts} .
-# weak hashing
+# hash fraco
 grep -rnE "md5|sha1|createHash\(|base64" --include=*.{py,js,ts} .
-# debug / bare except / deprecated
+# debug / except genérico / deprecated
 grep -rnE "debug\s*=\s*True|except:\s*$|utcnow\(|\.query\.get\(|new Buffer\(" --include=*.{py,js,ts} .
 ```
-Always exclude dependency dirs (`node_modules`, `venv`, `.venv`).
+Sempre exclua diretórios de dependências (`node_modules`, `venv`, `.venv`).
