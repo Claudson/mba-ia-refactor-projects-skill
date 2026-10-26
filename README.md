@@ -129,6 +129,8 @@ Estrutura original: já separa `models/`, `routes/`, `services/`, `utils/` (~1.1
 5. **Validação comparativa, não só "subiu".** A Fase 3 começa registrando um *baseline* da aplicação original (status + chaves de resposta de cada endpoint) e termina repetindo as mesmas chamadas no código novo.
 6. **Contrato da API preservado, com exceções declaradas.** As guidelines listam as únicas mudanças permitidas (remover campos sensíveis, proteger endpoints perigosos, trocar 500 por 400/404, corrigir integridade). Toda mudança tem que aparecer na seção *Intentional Contract Changes* — nada some em silêncio.
 7. **`disable-model-invocation: true`.** A skill altera muitos arquivos, então só roda quando chamada explicitamente.
+8. **O relatório é a especificação da Fase 3.** Cada *Recommendation* é uma ação concreta que o playbook sabe executar (ex.: "remover `POST /admin/query` (P-13a); proteger `POST /admin/reset-db` (P-13b)"), e a Fase 3 a aplica por inteiro. Se não puder, o finding sai como `◐ PARCIAL` ou `✗ NÃO RESOLVIDO` no resumo — nunca trocado por outra solução. O resumo da Fase 3 mostra, por finding, *recomendação → o que foi feito*, e termina com `Every finding matches its Phase 2 recommendation`.
+9. **Aderência comprovada por chamada, não por leitura.** Toda recomendação com efeito observável precisa de uma requisição HTTP que a comprove: rota removida → `404` no formato de erro da API; handler central → rota inexistente e método não permitido também em JSON; campo removido → ausente; credencial → `401/403` sem ela.
 
 ### Anti-patterns do catálogo e por quê
 
@@ -141,7 +143,7 @@ O catálogo nasceu da tabela "Padrões recorrentes" da análise manual: cada pad
 | MEDIUM | AP-12 N+1 · AP-13 Duplicação · AP-14 Validação fraca · AP-15 Erros engolidos · AP-16 Dados órfãos · **AP-DEP APIs deprecated** | Performance e consistência; AP-DEP cobre Python, SQLAlchemy, Flask, Node, Express e pacotes npm |
 | LOW | AP-17 `print` como log · AP-18 Magic numbers · AP-19 Nomes ruins · AP-20 Código morto · AP-21 Condicionais verbosas | Legibilidade |
 
-As regras de severidade do catálogo exigem classificar pelo **impacto no código analisado** (ex.: `debug=True` vira CRITICAL quando combinado com segredos expostos — foi o que a skill fez no projeto 1).
+As regras de severidade do catálogo exigem classificar pelo **impacto no código analisado** (ex.: no projeto 1 a skill manteve `debug=True` como HIGH e justificou no próprio finding: os handlers capturam as exceções e o console do Werkzeug exige PIN, embora o risco suba combinado com a secret key exposta).
 
 ### Como a skill ficou agnóstica de tecnologia
 
@@ -155,8 +157,9 @@ As regras de severidade do catálogo exigem classificar pelo **impacto no códig
 
 | Desafio | Solução |
 |---|---|
+| Garantir que a Fase 3 faça exatamente o que a auditoria recomendou (ex.: *remover* um console de SQL em vez de apenas protegê-lo) | O catálogo distingue execução arbitrária (→ remover, P-13a) de operação administrativa legítima (→ proteger, P-13b); as guidelines tratam o relatório como especificação; o SKILL.md exige checagem de aderência finding a finding, comprovada por chamadas HTTP. |
 | Como provar que "os endpoints continuam respondendo" sem testes automatizados nos projetos | Baseline obrigatório antes da refatoração (Fase 3.1) e comparação das mesmas chamadas depois. Fora da skill, criei [scripts/smoke_test.py](scripts/smoke_test.py) e [scripts/compare_results.py](scripts/compare_results.py) para validar de forma independente. |
-| Corrigir segurança sem "quebrar" a API (ex.: `/admin/query` executa SQL arbitrário) | Lista fechada de mudanças intencionais nas guidelines: o endpoint é mantido, mas protegido por `X-Admin-Token` e restrito a `SELECT` somente leitura. |
+| Corrigir segurança sem "quebrar" a API | Lista fechada de mudanças intencionais nas guidelines: operações administrativas legítimas (`/admin/reset-db`) continuam existindo, protegidas por `X-Admin-Token`; endpoints de execução arbitrária (`/admin/query`) são removidos — não existe versão segura de um console de SQL exposto por HTTP. |
 | Dados diferentes entre baseline e pós-refatoração | Regras de *runtime state* na análise: banco ignorado pelo git e recriado por seed pode ser apagado entre execuções; banco versionado é copiado e restaurado. |
 | Flask com `debug=True` cria um processo filho e a porta 5000 continuava ocupada | Instrução explícita para encerrar a árvore de processos e confirmar que a porta foi liberada. |
 | O Python global da máquina não tinha Flask instalado | Iteração na heurística de runtime: usar o virtualenv local (`venv/`) quando existir (commit `4c8baf5`). |
@@ -164,7 +167,7 @@ As regras de severidade do catálogo exigem classificar pelo **impacto no códig
 | Idioma | Primeira versão em inglês; traduzida para português mantendo os rótulos dos blocos de saída em inglês (commit `1d79889`). |
 | Saída longa no terminal (cópia truncada) | Relatório gravado em arquivo pela própria skill; sessões completas salvas com `/export` em `reports/logs/project-N/session.txt`. |
 
-**Iterações:** os ajustes acima foram feitos antes das execuções; depois deles, cada projeto precisou de **uma única execução** da skill para atingir todos os critérios.
+**Iterações:** como o enunciado prevê, a skill foi ajustada ao longo das execuções (virtualenv, idioma, aderência da Fase 3 ao relatório, erros 404/405 do framework no formato da API). O projeto 1 foi executado de novo do zero com a versão final da skill e atingiu todos os critérios em uma única passada. Os projetos 2 e 3 foram executados com a versão anterior; os ajustes finais não mudam o resultado deles, porque não têm endpoint de execução arbitrária e seus endpoints administrativos já ficaram protegidos por token.
 
 ---
 
@@ -174,7 +177,7 @@ As regras de severidade do catálogo exigem classificar pelo **impacto no códig
 
 | Projeto | Stack detectada | CRITICAL | HIGH | MEDIUM | LOW | Total | Relatório |
 |---|---|:-:|:-:|:-:|:-:|:-:|---|
-| 1 — code-smells-project | Python 3.12 + Flask 3.1.1 (sqlite3, SQL puro) | 7 | 4 | 5 | 5 | **21** | [audit-project-1.md](reports/audit-project-1.md) |
+| 1 — code-smells-project | Python 3.12 + Flask 3.1.1 (sqlite3, SQL puro) | 6 | 5 | 5 | 5 | **21** | [audit-project-1.md](reports/audit-project-1.md) |
 | 2 — ecommerce-api-legacy | Node.js 24 + Express 4.22.1 (sqlite3 em memória) | 5 | 4 | 5 | 4 | **18** | [audit-project-2.md](reports/audit-project-2.md) |
 | 3 — task-manager-api | Python 3.12 + Flask 3.0.0 + SQLAlchemy 2.1 | 4 | 3 | 6 | 5 | **18** | [audit-project-3.md](reports/audit-project-3.md) |
 
@@ -184,7 +187,7 @@ Todos os problemas da Análise Manual (seção A) foram encontrados pela skill n
 
 <table>
 <tr><th>Projeto</th><th>Antes</th><th>Depois</th></tr>
-<tr><td><b>1</b><br>Monolítico<br>4 arquivos<br>~780 linhas<br><br>→ extração completa<br>36 arquivos<br>~1.360 linhas</td>
+<tr><td><b>1</b><br>Monolítico<br>4 arquivos<br>~780 linhas<br><br>→ extração completa<br>37 arquivos<br>~1.030 linhas</td>
 <td>
 
 ```
@@ -201,8 +204,8 @@ app.py                      entry point
 src/app.py                  create_app (composition root)
 src/config/settings.py
 src/database.py             conexão por request (flask.g)
-src/models/        produto, usuario, pedido, manutencao
-src/services/      pedido_service, notification_service
+src/models/        produto, usuario, pedido
+src/services/      pedido, relatorio, notification, admin
 src/validators/    produto, usuario, pedido
 src/controllers/   6 controllers
 src/views/         6 blueprints
@@ -270,13 +273,13 @@ Validação independente da skill, feita com [scripts/smoke_test.py](scripts/smo
 
 | Projeto | Requisições | Respostas 5xx | Idênticas ao baseline (com `X-Admin-Token`) | Diferenças restantes (todas intencionais) |
 |---|:-:|:-:|:-:|---|
-| 1 | 26 | 0 | 25/26 | `GET /health` não devolve mais `secret_key`, `db_path`, `debug` |
+| 1 | 26 | 0 | 24/26 | `GET /health` não devolve mais `secret_key`, `db_path`, `debug`; `POST /admin/query` **removido** (404 em JSON) |
 | 2 | 7 | 0 | **7/7** (relatório financeiro com conteúdo idêntico) | — |
 | 3 | 29 | 0 | 26/29 | campo `password` removido de `GET /users/1`, `POST /users`, `PUT /users/2` |
 
-Sem o token, os endpoints administrativos/destrutivos respondem 403 (P1: `/admin/*`; P2: `financial-report` e `DELETE /api/users`; P3: os 3 `DELETE`). Verificações extras:
+Sem o token, os endpoints administrativos/destrutivos respondem 403 (P1: `/admin/reset-db`; P2: `financial-report` e `DELETE /api/users`; P3: os 3 `DELETE`). Verificações extras:
 
-- **P1:** `POST /login` com `' OR 1=1 --` → 401 (antes autenticava); `/admin/query` com `DROP TABLE` → 403; `GET /usuarios` sem o campo `senha`.
+- **P1:** `POST /login` com `' OR 1=1 --` → 401 (antes autenticava); `POST /admin/query` → 404 `{"erro": ...}` (rota removida); rota inexistente → 404 e método não permitido → 405, ambos em JSON; `GET /usuarios` sem o campo `senha`.
 - **P2:** checkout com `"card": 4111` → 400 e o servidor continua de pé (antes o processo caía); log mostra `**** 4444` em vez do cartão.
 - **P3:** seed e servidor executados com `-W error::DeprecationWarning` sem nenhuma falha (nenhuma API deprecated no caminho executado).
 
@@ -305,7 +308,7 @@ Sem o token, os endpoints administrativos/destrutivos respondem 403 (P1: `/admin
 | Error handling centralizado | ✅ `error_handler.py` | ✅ `errorHandler.js` | ✅ `middlewares/errors.py` |
 | Entry point claro | ✅ `app.py` | ✅ `src/app.js` | ✅ `app.py` |
 | Aplicação inicia sem erros | ✅ | ✅ | ✅ |
-| Endpoints originais respondem corretamente | ✅ 26/26 | ✅ 7/7 | ✅ 29/29 |
+| Endpoints originais respondem corretamente | ✅ 18/18 rotas mantidas (`/admin/query` removido por recomendação → 404) | ✅ 7/7 | ✅ 29/29 |
 
 ¹ O finding F14 (dependências transitivas deprecated) aponta `package-lock.json` sem linha, porque o problema está nos pacotes instalados.
 
@@ -320,11 +323,12 @@ Sem o token, os endpoints administrativos/destrutivos respondem 403 (P1: `/admin
 Trecho do boot do projeto 1 refatorado ([boot.log](reports/logs/project-1/boot.log)):
 
 ```
-WARNING  src.config.settings | SECRET_KEY nao definida; usando chave efemera desta execucao
-WARNING  src.config.settings | ADMIN_TOKEN nao definida; endpoints administrativos desabilitados
-INFO     src.app | CORS desabilitado (CORS_ORIGINS vazio)
-INFO     src.database | Banco populado com dados de exemplo
-INFO     src.app | Aplicacao criada com 6 blueprints
+WARNING [src.app] SECRET_KEY não definida; usando chave efêmera gerada no startup
+INFO [src.database] Banco populado com dados de exemplo
+INFO [__main__] Servidor iniciado em http://127.0.0.1:5000
+ * Serving Flask app 'src.app'
+ * Debug mode: off
+ * Running on http://127.0.0.1:5000
 ```
 
 Comparação do projeto 2 com token (`compare_results.py`):
@@ -346,7 +350,7 @@ Comparação do projeto 2 com token (`compare_results.py`):
 - **Mesma skill, estratégias diferentes.** Nos projetos 1 e 2 (monolito e God Class) a skill fez extração completa e apagou os arquivos antigos; no projeto 3 manteve `models/` e `routes/`, adicionou as camadas que faltavam e só moveu o CRUD de categorias para um arquivo próprio.
 - **Idioma de cada stack respeitado.** Em Python: app factory, Blueprints, `flask.g`, `werkzeug.security`. Em Node: factories com injeção de dependência, wrapper de `sqlite3` com Promises, `async/await`, transação enfileirada, `crypto.scrypt`, middleware de erro com 4 parâmetros.
 - **Contrato preservado com o formato de cada projeto.** Chave de erro `erro` (P1) vs `error` (P3); respostas em texto puro no P2 foram mantidas em texto.
-- **Mesma decisão de segurança nos 3:** endpoints perigosos protegidos por `X-Admin-Token` vindo da config, desabilitados (403) quando o token não está configurado.
+- **Mesma regra de segurança nos 3:** operações administrativas legítimas protegidas por `X-Admin-Token` vindo da config (403 quando o token não está configurado); o único endpoint de execução arbitrária (`POST /admin/query`, P1) foi removido.
 - **Limitação conhecida:** no P2, o F14 (dependências deprecated trazidas pelo driver `sqlite3`) ficou sem correção — a própria skill o marcou como "NÃO RESOLVIDO", porque exigiria trocar o driver (ex.: `node:sqlite`).
 - **Imprecisão corrigida pela própria skill:** no P3, durante a Fase 3, ela verificou que o F12 (tasks órfãs ao apagar categoria) era parcialmente impreciso — o ORM já zerava `category_id` — e registrou isso, mantendo a desassociação explícita.
 
