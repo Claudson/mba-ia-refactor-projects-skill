@@ -1,13 +1,10 @@
-"""Rotas HTTP de relatorios."""
-
 from flask import Blueprint, jsonify
 
+from src.controllers import relatorio_controller
 
-def create_relatorio_blueprint(relatorio_controller):
-    bp = Blueprint("relatorios", __name__)
+relatorio_bp = Blueprint("relatorios", __name__)
 
-    @bp.get("/relatorios/vendas")
-    def relatorio_vendas():
-        return jsonify(relatorio_controller["vendas"]()), 200
 
-    return bp
+@relatorio_bp.get("/relatorios/vendas")
+def relatorio_vendas():
+    return jsonify({"dados": relatorio_controller.relatorio_vendas(), "sucesso": True}), 200

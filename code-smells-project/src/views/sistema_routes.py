@@ -1,19 +1,15 @@
-"""Rotas HTTP de indice e health check."""
+from flask import Blueprint, current_app, jsonify
 
-from flask import Blueprint, jsonify
+from src.controllers import sistema_controller
+
+sistema_bp = Blueprint("sistema", __name__)
 
 
-def create_sistema_blueprint(sistema_controller):
-    bp = Blueprint("sistema", __name__)
+@sistema_bp.get("/")
+def index():
+    return jsonify(sistema_controller.index(current_app.config["VERSION"]))
 
-    @bp.get("/")
-    def index():
-        return jsonify(sistema_controller["index"]()), 200
 
-    @bp.get("/health")
-    def health_check():
-        resultado = sistema_controller["health"]()
-        status = 200 if resultado["status"] == "ok" else 500
-        return jsonify(resultado), status
-
-    return bp
+@sistema_bp.get("/health")
+def health_check():
+    return jsonify(sistema_controller.health(current_app.config["VERSION"])), 200

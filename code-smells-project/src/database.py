@@ -1,25 +1,23 @@
-"""Ciclo de vida da conexao SQLite, schema e seed (P-06, P-09).
-
-Substitui a conexao global mutavel do projeto original: cada requisicao recebe
-sua propria conexao, guardada em ``flask.g`` e fechada no teardown do contexto.
-"""
-
-import logging
 import sqlite3
+from contextlib import contextmanager
 
 from flask import current_app, g
 from werkzeug.security import generate_password_hash
 
-logger = logging.getLogger(__name__)
+from src.logger import get_logger
 
-_SCHEMA = (
+logger = get_logger(__name__)
+
+HASH_PREFIXES = ("scrypt:", "pbkdf2:")
+
+SCHEMA = (
     """
     CREATE TABLE IF NOT EXISTS produtos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
+        nome TEXT,
         descricao TEXT,
-        preco REAL NOT NULL,
-        estoque INTEGER NOT NULL,
+        preco REAL,
+        estoque INTEGER,
         categoria TEXT,
         ativo INTEGER DEFAULT 1,
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -28,9 +26,9 @@ _SCHEMA = (
     """
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        senha TEXT NOT NULL,
+        nome TEXT,
+        email TEXT,
+        senha TEXT,
         tipo TEXT DEFAULT 'cliente',
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -38,7 +36,7 @@ _SCHEMA = (
     """
     CREATE TABLE IF NOT EXISTS pedidos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
+        usuario_id INTEGER,
         status TEXT DEFAULT 'pendente',
         total REAL,
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -47,15 +45,15 @@ _SCHEMA = (
     """
     CREATE TABLE IF NOT EXISTS itens_pedido (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pedido_id INTEGER NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE,
-        produto_id INTEGER NOT NULL REFERENCES produtos(id) ON DELETE RESTRICT,
-        quantidade INTEGER NOT NULL,
-        preco_unitario REAL NOT NULL
+        pedido_id INTEGER,
+        produto_id INTEGER,
+        quantidade INTEGER,
+        preco_unitario REAL
     )
     """,
 )
 
-_PRODUTOS_SEED = (
+SEED_PRODUTOS = (
     ("Notebook Gamer", "Notebook potente para jogos", 5999.99, 10, "informatica"),
     ("Mouse Wireless", "Mouse sem fio ergonômico", 89.90, 50, "informatica"),
     ("Teclado Mecânico", "Teclado mecânico RGB", 299.90, 30, "informatica"),
@@ -68,66 +66,84 @@ _PRODUTOS_SEED = (
     ("Camiseta Dev", "Camiseta estampa código", 59.90, 100, "vestuario"),
 )
 
-# Usuarios de demonstracao. As senhas sao gravadas com hash (P-07), nunca em claro.
-_USUARIOS_SEED = (
+# Usuários de demonstração; as senhas são gravadas com hash no seed.
+SEED_USUARIOS = (
     ("Admin", "admin@loja.com", "admin123", "admin"),
     ("João Silva", "joao@email.com", "123456", "cliente"),
     ("Maria Santos", "maria@email.com", "senha123", "cliente"),
 )
 
 
-def connect(database_path):
-    """Abre uma conexao configurada (row_factory + integridade referencial ativa)."""
-    conn = sqlite3.connect(database_path)
+def _connect(path):
+    conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
-def get_connection():
-    """Conexao da requisicao atual, criada sob demanda."""
+def get_db():
+    """Conexão da requisição atual, aberta sob demanda e guardada em flask.g."""
     if "db" not in g:
-        g.db = connect(current_app.config["DATABASE_PATH"])
+        g.db = _connect(current_app.config["DATABASE_PATH"])
     return g.db
 
 
-def close_connection(_exc=None):
-    conn = g.pop("db", None)
-    if conn is not None:
-        conn.close()
+def close_db(_exc=None):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
 
 
-def init_schema(conn):
-    with conn:
-        for ddl in _SCHEMA:
-            conn.execute(ddl)
+@contextmanager
+def transaction():
+    """Transação atômica (commit ou rollback); chamadas aninhadas reutilizam a externa."""
+    db = get_db()
+    if g.get("tx_depth", 0):
+        g.tx_depth += 1
+        try:
+            yield db
+        finally:
+            g.tx_depth -= 1
+        return
+    g.tx_depth = 1
+    try:
+        with db:
+            yield db
+    finally:
+        g.tx_depth = 0
 
 
-def seed(conn):
-    """Popula o banco com dados de exemplo, apenas se estiver vazio."""
-    if conn.execute("SELECT COUNT(*) FROM produtos").fetchone()[0]:
-        return False
-    with conn:
-        conn.executemany(
-            "INSERT INTO produtos (nome, descricao, preco, estoque, categoria) "
-            "VALUES (?, ?, ?, ?, ?)",
-            _PRODUTOS_SEED,
-        )
-        conn.executemany(
-            "INSERT INTO usuarios (nome, email, senha, tipo) VALUES (?, ?, ?, ?)",
-            [
-                (nome, email, generate_password_hash(senha), tipo)
-                for nome, email, senha, tipo in _USUARIOS_SEED
-            ],
-        )
+def _seed(db):
+    if db.execute("SELECT COUNT(*) FROM produtos").fetchone()[0] > 0:
+        return
+    db.executemany(
+        "INSERT INTO produtos (nome, descricao, preco, estoque, categoria) VALUES (?, ?, ?, ?, ?)",
+        SEED_PRODUTOS,
+    )
+    db.executemany(
+        "INSERT INTO usuarios (nome, email, senha, tipo) VALUES (?, ?, ?, ?)",
+        [(nome, email, generate_password_hash(senha), tipo) for nome, email, senha, tipo in SEED_USUARIOS],
+    )
     logger.info("Banco populado com dados de exemplo")
-    return True
 
 
-def init_app(app):
-    """Registra o teardown e garante schema + seed no startup."""
-    app.teardown_appcontext(close_connection)
-    with app.app_context():
-        conn = get_connection()
-        init_schema(conn)
-        seed(conn)
+def _hash_legacy_passwords(db):
+    rows = db.execute("SELECT id, senha FROM usuarios").fetchall()
+    legacy = [(generate_password_hash(row["senha"]), row["id"])
+              for row in rows if row["senha"] and not row["senha"].startswith(HASH_PREFIXES)]
+    if legacy:
+        db.executemany("UPDATE usuarios SET senha = ? WHERE id = ?", legacy)
+        logger.info("Senhas legadas convertidas para hash: %d", len(legacy))
+
+
+def init_db(app):
+    """Registra o ciclo de vida da conexão e prepara schema, seed e migração de senhas."""
+    app.teardown_appcontext(close_db)
+    db = _connect(app.config["DATABASE_PATH"])
+    try:
+        with db:
+            for statement in SCHEMA:
+                db.execute(statement)
+            _seed(db)
+            _hash_legacy_passwords(db)
+    finally:
+        db.close()

@@ -1,71 +1,53 @@
-"""Validacao de payloads de produto — fonte unica para criar e atualizar (P-12)."""
-
 from src.middlewares.error_handler import ValidationError
-from src.models import produto_model
+from src.models.produto_model import CATEGORIA_PADRAO, CATEGORIAS_VALIDAS, NOME_MAX, NOME_MIN
 
-_OBRIGATORIOS = (("nome", "Nome"), ("preco", "Preço"), ("estoque", "Estoque"))
-
-
-def _numero(valor, mensagem):
-    if isinstance(valor, bool) or not isinstance(valor, (int, float)):
-        raise ValidationError(mensagem)
-    return valor
+CAMPOS_OBRIGATORIOS = (("nome", "Nome"), ("preco", "Preço"), ("estoque", "Estoque"))
 
 
-def validar_payload(dados):
-    """Valida o corpo de criacao/atualizacao e devolve os campos normalizados."""
-    if not dados:
+def _numero(valor):
+    return isinstance(valor, (int, float)) and not isinstance(valor, bool)
+
+
+def validar_produto(dados):
+    """Valida o payload de criação/atualização e devolve os campos normalizados."""
+    if not dados or not isinstance(dados, dict):
         raise ValidationError("Dados inválidos")
-
-    for campo, rotulo in _OBRIGATORIOS:
+    for campo, rotulo in CAMPOS_OBRIGATORIOS:
         if campo not in dados:
-            raise ValidationError("%s é obrigatório" % rotulo)
+            raise ValidationError(f"{rotulo} é obrigatório")
 
     nome = dados["nome"]
+    descricao = dados.get("descricao", "")
+    preco = dados["preco"]
+    estoque = dados["estoque"]
+    categoria = dados.get("categoria", CATEGORIA_PADRAO)
+
     if not isinstance(nome, str):
-        raise ValidationError("Nome inválido")
-
-    preco = _numero(dados["preco"], "Preço inválido")
-    estoque = _numero(dados["estoque"], "Estoque inválido")
-
+        raise ValidationError("Nome deve ser texto")
+    if not isinstance(descricao, str):
+        raise ValidationError("Descrição deve ser texto")
+    if not _numero(preco):
+        raise ValidationError("Preço deve ser numérico")
+    if not isinstance(estoque, int) or isinstance(estoque, bool):
+        raise ValidationError("Estoque deve ser um número inteiro")
     if preco < 0:
         raise ValidationError("Preço não pode ser negativo")
     if estoque < 0:
         raise ValidationError("Estoque não pode ser negativo")
-    if len(nome) < produto_model.NOME_MIN_TAMANHO:
+    if len(nome) < NOME_MIN:
         raise ValidationError("Nome muito curto")
-    if len(nome) > produto_model.NOME_MAX_TAMANHO:
+    if len(nome) > NOME_MAX:
         raise ValidationError("Nome muito longo")
+    if categoria not in CATEGORIAS_VALIDAS:
+        raise ValidationError("Categoria inválida. Válidas: " + str(list(CATEGORIAS_VALIDAS)))
 
-    categoria = dados.get("categoria", produto_model.CATEGORIA_PADRAO)
-    if categoria not in produto_model.CATEGORIAS_VALIDAS:
-        raise ValidationError(
-            "Categoria inválida. Válidas: %s" % str(list(produto_model.CATEGORIAS_VALIDAS))
-        )
-
-    return {
-        "nome": nome,
-        "descricao": dados.get("descricao", ""),
-        "preco": preco,
-        "estoque": estoque,
-        "categoria": categoria,
-    }
+    return {"nome": nome, "descricao": descricao, "preco": preco, "estoque": estoque, "categoria": categoria}
 
 
-def validar_filtros(termo, categoria, preco_min, preco_max):
-    """Converte e valida os filtros da busca vindos da querystring."""
-
-    def _para_float(valor, campo):
-        if valor is None or valor == "":
-            return None
-        try:
-            return float(valor)
-        except (TypeError, ValueError):
-            raise ValidationError("%s inválido" % campo) from None
-
-    return {
-        "termo": termo or None,
-        "categoria": categoria or None,
-        "preco_min": _para_float(preco_min, "preco_min"),
-        "preco_max": _para_float(preco_max, "preco_max"),
-    }
+def validar_filtro_preco(valor, nome_parametro):
+    if not valor:
+        return None
+    try:
+        return float(valor)
+    except ValueError:
+        raise ValidationError(f"Parâmetro {nome_parametro} inválido") from None

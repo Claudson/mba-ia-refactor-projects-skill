@@ -1,40 +1,39 @@
-"""Rotas HTTP de produto. Apenas traducao HTTP <-> controller."""
-
 from flask import Blueprint, jsonify, request
 
+from src.controllers import produto_controller
 
-def create_produto_blueprint(produto_controller):
-    bp = Blueprint("produtos", __name__)
+produto_bp = Blueprint("produtos", __name__)
 
-    @bp.get("/produtos")
-    def listar_produtos():
-        return jsonify(produto_controller["listar"]()), 200
 
-    @bp.get("/produtos/busca")
-    def buscar_produtos():
-        resultado = produto_controller["buscar_com_filtros"](
-            request.args.get("q", ""),
-            request.args.get("categoria"),
-            request.args.get("preco_min"),
-            request.args.get("preco_max"),
-        )
-        return jsonify(resultado), 200
+@produto_bp.get("/produtos")
+def listar_produtos():
+    return jsonify({"dados": produto_controller.listar_produtos(), "sucesso": True}), 200
 
-    @bp.get("/produtos/<int:produto_id>")
-    def buscar_produto(produto_id):
-        return jsonify(produto_controller["buscar"](produto_id)), 200
 
-    @bp.post("/produtos")
-    def criar_produto():
-        return jsonify(produto_controller["criar"](request.get_json(silent=True))), 201
+@produto_bp.get("/produtos/busca")
+def buscar_produtos():
+    resultados = produto_controller.buscar_produtos(request.args)
+    return jsonify({"dados": resultados, "total": len(resultados), "sucesso": True}), 200
 
-    @bp.put("/produtos/<int:produto_id>")
-    def atualizar_produto(produto_id):
-        resultado = produto_controller["atualizar"](produto_id, request.get_json(silent=True))
-        return jsonify(resultado), 200
 
-    @bp.delete("/produtos/<int:produto_id>")
-    def deletar_produto(produto_id):
-        return jsonify(produto_controller["remover"](produto_id)), 200
+@produto_bp.get("/produtos/<int:produto_id>")
+def buscar_produto(produto_id):
+    return jsonify({"dados": produto_controller.buscar_produto(produto_id), "sucesso": True}), 200
 
-    return bp
+
+@produto_bp.post("/produtos")
+def criar_produto():
+    dados = produto_controller.criar_produto(request.get_json(silent=True))
+    return jsonify({"dados": dados, "sucesso": True, "mensagem": "Produto criado"}), 201
+
+
+@produto_bp.put("/produtos/<int:produto_id>")
+def atualizar_produto(produto_id):
+    produto_controller.atualizar_produto(produto_id, request.get_json(silent=True))
+    return jsonify({"sucesso": True, "mensagem": "Produto atualizado"}), 200
+
+
+@produto_bp.delete("/produtos/<int:produto_id>")
+def deletar_produto(produto_id):
+    produto_controller.deletar_produto(produto_id)
+    return jsonify({"sucesso": True, "mensagem": "Produto deletado"}), 200

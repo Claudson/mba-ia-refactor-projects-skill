@@ -1,13 +1,6 @@
-"""Casos de uso de informacao da API: indice e health check (P-04, P-08)."""
-
-import logging
-import sqlite3
-
 from src.models import pedido_model, produto_model, usuario_model
 
-logger = logging.getLogger(__name__)
-
-_ENDPOINTS = {
+ENDPOINTS = {
     "produtos": "/produtos",
     "usuarios": "/usuarios",
     "pedidos": "/pedidos",
@@ -17,31 +10,18 @@ _ENDPOINTS = {
 }
 
 
-def create_sistema_controller(db, versao):
-    def index():
-        return {
-            "mensagem": "Bem-vindo à API da Loja",
-            "versao": versao,
-            "endpoints": _ENDPOINTS,
-        }
+def index(versao):
+    return {"mensagem": "Bem-vindo à API da Loja", "versao": versao, "endpoints": ENDPOINTS}
 
-    def health():
-        """Somente status e contagens — nunca valores de configuracao."""
-        try:
-            conn = db()
-            counts = {
-                "produtos": produto_model.contar(conn),
-                "usuarios": usuario_model.contar(conn),
-                "pedidos": pedido_model.contar(conn),
-            }
-        except sqlite3.Error:
-            logger.exception("Health check falhou ao consultar o banco")
-            return {"status": "erro", "detalhes": "Banco de dados indisponível"}
-        return {
-            "status": "ok",
-            "database": "connected",
-            "counts": counts,
-            "versao": versao,
-        }
 
-    return {"index": index, "health": health}
+def health(versao):
+    return {
+        "status": "ok",
+        "database": "connected",
+        "counts": {
+            "produtos": produto_model.contar_ativos(),
+            "usuarios": usuario_model.contar(),
+            "pedidos": pedido_model.contar(),
+        },
+        "versao": versao,
+    }

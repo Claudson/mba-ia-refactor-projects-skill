@@ -1,58 +1,56 @@
-2026-10-10 14:14:25,952 WARNING  src.config.settings | SECRET_KEY nao definida; usando chave efemera desta execucao
-2026-10-10 14:14:25,952 WARNING  src.config.settings | ADMIN_TOKEN nao definida; endpoints administrativos desabilitados
-2026-10-10 14:14:25,955 INFO     src.app | CORS desabilitado (CORS_ORIGINS vazio)
-2026-10-10 14:14:26,504 INFO     src.database | Banco populado com dados de exemplo
-2026-10-10 14:14:26,513 INFO     src.app | Aplicacao criada com 6 blueprints
-2026-10-10 14:14:26,513 INFO     __main__ | Servidor iniciado em http://127.0.0.1:5000
+2026-10-26 10:58:55,834 WARNING [src.app] SECRET_KEY não definida; usando chave efêmera gerada no startup
+2026-10-26 10:58:56,302 INFO [src.database] Banco populado com dados de exemplo
+2026-10-26 10:58:56,315 INFO [__main__] Servidor iniciado em http://127.0.0.1:5000
  * Serving Flask app 'src.app'
  * Debug mode: off
-2026-10-10 14:14:26,532 INFO     werkzeug | WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+2026-10-26 10:58:56,327 INFO [werkzeug] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
  * Running on http://127.0.0.1:5000
-2026-10-10 14:14:26,532 INFO     werkzeug | Press CTRL+C to quit
-2026-10-10 14:14:26,964 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:26] "GET /health HTTP/1.1" 200 -
-2026-10-10 14:14:27,206 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET / HTTP/1.1" 200 -
-2026-10-10 14:14:27,221 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /health HTTP/1.1" 200 -
-2026-10-10 14:14:27,226 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /produtos HTTP/1.1" 200 -
-2026-10-10 14:14:27,255 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /produtos/1 HTTP/1.1" 200 -
-2026-10-10 14:14:27,270 INFO     src.middlewares.error_handler | Erro de aplicacao 404: Produto não encontrado
-2026-10-10 14:14:27,271 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /produtos/9999 HTTP/1.1" 404 -
-2026-10-10 14:14:27,286 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /produtos/busca?q=mouse HTTP/1.1" 200 -
-2026-10-10 14:14:27,301 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /produtos/busca?categoria=informatica&preco_min=100&preco_max=500 HTTP/1.1" 200 -
-2026-10-10 14:14:27,322 INFO     src.controllers.produto_controller | Produto criado produto_id=11
-2026-10-10 14:14:27,324 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "POST /produtos HTTP/1.1" 201 -
-2026-10-10 14:14:27,347 INFO     src.middlewares.error_handler | Erro de aplicacao 400: Preço é obrigatório
-2026-10-10 14:14:27,347 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "POST /produtos HTTP/1.1" 400 -
-2026-10-10 14:14:27,365 INFO     src.controllers.produto_controller | Produto atualizado produto_id=1
-2026-10-10 14:14:27,366 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "PUT /produtos/1 HTTP/1.1" 200 -
-2026-10-10 14:14:27,405 INFO     src.controllers.produto_controller | Produto removido produto_id=11
-2026-10-10 14:14:27,406 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "DELETE /produtos/11 HTTP/1.1" 200 -
-2026-10-10 14:14:27,425 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /usuarios HTTP/1.1" 200 -
-2026-10-10 14:14:27,439 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /usuarios/1 HTTP/1.1" 200 -
-2026-10-10 14:14:27,441 INFO     src.middlewares.error_handler | Erro de aplicacao 404: Usuário não encontrado
-2026-10-10 14:14:27,442 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "GET /usuarios/9999 HTTP/1.1" 404 -
-2026-10-10 14:14:27,629 INFO     src.controllers.usuario_controller | Usuario criado usuario_id=4
-2026-10-10 14:14:27,629 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "POST /usuarios HTTP/1.1" 201 -
-2026-10-10 14:14:27,807 INFO     src.controllers.usuario_controller | Login efetuado usuario_id=2
-2026-10-10 14:14:27,807 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "POST /login HTTP/1.1" 200 -
-2026-10-10 14:14:27,969 INFO     src.controllers.usuario_controller | Tentativa de login recusada
-2026-10-10 14:14:27,969 INFO     src.middlewares.error_handler | Erro de aplicacao 401: Email ou senha inválidos
-2026-10-10 14:14:27,969 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "POST /login HTTP/1.1" 401 -
-2026-10-10 14:14:27,998 INFO     src.services.pedido_service | Pedido criado pedido_id=1 itens=2
-2026-10-10 14:14:27,998 INFO     src.services.notification_service | Notificacao de pedido criado enviada pedido_id=1
-2026-10-10 14:14:27,998 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:27] "POST /pedidos HTTP/1.1" 201 -
-2026-10-10 14:14:28,004 INFO     src.middlewares.error_handler | Erro de aplicacao 400: Produto 9999 não encontrado
-2026-10-10 14:14:28,004 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:28] "POST /pedidos HTTP/1.1" 400 -
-2026-10-10 14:14:28,008 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:28] "GET /pedidos HTTP/1.1" 200 -
-2026-10-10 14:14:28,034 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:28] "GET /pedidos/usuario/2 HTTP/1.1" 200 -
-2026-10-10 14:14:28,059 INFO     src.services.pedido_service | Status alterado pedido_id=1 status=aprovado
-2026-10-10 14:14:28,060 INFO     src.services.notification_service | Pedido aprovado, preparar envio pedido_id=1
-2026-10-10 14:14:28,060 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:28] "PUT /pedidos/1/status HTTP/1.1" 200 -
-2026-10-10 14:14:28,064 INFO     src.middlewares.error_handler | Erro de aplicacao 400: Status inválido
-2026-10-10 14:14:28,065 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:28] "PUT /pedidos/1/status HTTP/1.1" 400 -
-2026-10-10 14:14:28,083 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:28] "GET /relatorios/vendas HTTP/1.1" 200 -
-2026-10-10 14:14:28,111 WARNING  src.middlewares.auth | Acesso administrativo recusado: ADMIN_TOKEN nao configurado
-2026-10-10 14:14:28,111 INFO     src.middlewares.error_handler | Erro de aplicacao 403: Endpoint administrativo desabilitado
-2026-10-10 14:14:28,111 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:28] "POST /admin/query HTTP/1.1" 403 -
-2026-10-10 14:14:28,125 WARNING  src.middlewares.auth | Acesso administrativo recusado: ADMIN_TOKEN nao configurado
-2026-10-10 14:14:28,126 INFO     src.middlewares.error_handler | Erro de aplicacao 403: Endpoint administrativo desabilitado
-2026-10-10 14:14:28,126 INFO     werkzeug | 127.0.0.1 - - [10/Oct/2026 14:14:28] "POST /admin/reset-db HTTP/1.1" 403 -
+2026-10-26 10:58:56,327 INFO [werkzeug] Press CTRL+C to quit
+2026-10-26 10:58:56,472 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /health HTTP/1.1" 200 -
+2026-10-26 10:58:56,749 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET / HTTP/1.1" 200 -
+2026-10-26 10:58:56,765 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /health HTTP/1.1" 200 -
+2026-10-26 10:58:56,780 INFO [src.controllers.produto_controller] Listando 10 produtos
+2026-10-26 10:58:56,781 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /produtos HTTP/1.1" 200 -
+2026-10-26 10:58:56,797 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /produtos/1 HTTP/1.1" 200 -
+2026-10-26 10:58:56,812 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /produtos/9999 HTTP/1.1" 404 -
+2026-10-26 10:58:56,827 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /produtos/busca?q=mouse HTTP/1.1" 200 -
+2026-10-26 10:58:56,843 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /produtos/busca?categoria=informatica&preco_min=100&preco_max=500 HTTP/1.1" 200 -
+2026-10-26 10:58:56,865 INFO [src.controllers.produto_controller] Produto criado id=11
+2026-10-26 10:58:56,865 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "POST /produtos HTTP/1.1" 201 -
+2026-10-26 10:58:56,890 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "POST /produtos HTTP/1.1" 400 -
+2026-10-26 10:58:56,907 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "PUT /produtos/1 HTTP/1.1" 200 -
+2026-10-26 10:58:56,925 INFO [src.controllers.produto_controller] Produto 11 desativado
+2026-10-26 10:58:56,926 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "DELETE /produtos/11 HTTP/1.1" 200 -
+2026-10-26 10:58:56,930 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /usuarios HTTP/1.1" 200 -
+2026-10-26 10:58:56,952 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /usuarios/1 HTTP/1.1" 200 -
+2026-10-26 10:58:56,967 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:56] "GET /usuarios/9999 HTTP/1.1" 404 -
+2026-10-26 10:58:57,142 INFO [src.controllers.usuario_controller] Usuário criado id=4
+2026-10-26 10:58:57,142 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /usuarios HTTP/1.1" 201 -
+2026-10-26 10:58:57,314 INFO [src.controllers.usuario_controller] Login bem-sucedido id=2
+2026-10-26 10:58:57,315 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /login HTTP/1.1" 200 -
+2026-10-26 10:58:57,468 INFO [src.controllers.usuario_controller] Tentativa de login inválida
+2026-10-26 10:58:57,468 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /login HTTP/1.1" 401 -
+2026-10-26 10:58:57,484 INFO [src.services.notification_service] Notificação EMAIL: pedido 1 criado para usuário 2
+2026-10-26 10:58:57,484 INFO [src.services.notification_service] Notificação SMS: pedido 1 recebido
+2026-10-26 10:58:57,484 INFO [src.services.notification_service] Notificação PUSH: novo pedido 1 recebido pelo sistema
+2026-10-26 10:58:57,484 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /pedidos HTTP/1.1" 201 -
+2026-10-26 10:58:57,507 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /pedidos HTTP/1.1" 400 -
+2026-10-26 10:58:57,520 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "GET /pedidos HTTP/1.1" 200 -
+2026-10-26 10:58:57,535 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "GET /pedidos/usuario/2 HTTP/1.1" 200 -
+2026-10-26 10:58:57,559 INFO [src.services.notification_service] Notificação: pedido 1 aprovado, preparar envio
+2026-10-26 10:58:57,561 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "PUT /pedidos/1/status HTTP/1.1" 200 -
+2026-10-26 10:58:57,580 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "PUT /pedidos/1/status HTTP/1.1" 400 -
+2026-10-26 10:58:57,583 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "GET /relatorios/vendas HTTP/1.1" 200 -
+2026-10-26 10:58:57,596 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /admin/query HTTP/1.1" 404 -
+2026-10-26 10:58:57,619 WARNING [src.services.admin_service] Banco de dados resetado via endpoint administrativo
+2026-10-26 10:58:57,619 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /admin/reset-db HTTP/1.1" 200 -
+2026-10-26 10:58:57,799 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "GET /rota-inexistente HTTP/1.1" 404 -
+2026-10-26 10:58:57,840 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "DELETE /produtos HTTP/1.1" 405 -
+2026-10-26 10:58:57,886 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /admin/query HTTP/1.1" 404 -
+2026-10-26 10:58:57,934 INFO [src.controllers.usuario_controller] Tentativa de login inválida
+2026-10-26 10:58:57,934 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /login HTTP/1.1" 401 -
+2026-10-26 10:58:57,979 INFO [src.controllers.usuario_controller] Tentativa de login inválida
+2026-10-26 10:58:57,980 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:57] "POST /login HTTP/1.1" 401 -
+2026-10-26 10:58:58,022 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:58] "POST /admin/reset-db HTTP/1.1" 401 -
+2026-10-26 10:58:58,062 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:58] "POST /produtos HTTP/1.1" 400 -
+2026-10-26 10:58:58,105 INFO [werkzeug] 127.0.0.1 - - [26/Oct/2026 10:58:58] "GET /usuarios HTTP/1.1" 200 -

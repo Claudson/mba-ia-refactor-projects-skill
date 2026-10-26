@@ -1,8 +1,5 @@
-"""Caso de uso de relatorio de vendas (P-04)."""
+from src.services import relatorio_service
 
 
-def create_relatorio_controller(db, pedido_service):
-    def vendas():
-        return {"dados": pedido_service["relatorio_vendas"](db()), "sucesso": True}
-
-    return {"vendas": vendas}
+def relatorio_vendas():
+    return relatorio_service.relatorio_vendas()

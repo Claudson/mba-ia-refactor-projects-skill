@@ -1,81 +1,45 @@
-"""Regras de negocio de pedidos e relatorio de vendas (P-04, P-09, P-12)."""
+from src.database import transaction
+from src.middlewares.error_handler import ValidationError
+from src.models import pedido_model, produto_model, usuario_model
+from src.services import notification_service
 
-import logging
-
-from src.middlewares.error_handler import BusinessRuleError, NotFoundError
-from src.models import pedido_model, usuario_model
-from src.validators.pedido_validator import PAYLOAD_PEDIDO
-
-logger = logging.getLogger(__name__)
+FALHA = {"sucesso": False}
 
 
-def create_pedido_service(notification_service):
-    def criar(conn, usuario_id, itens):
-        """Valida estoque, calcula o total e grava tudo em uma transacao."""
-        if not usuario_model.existe(conn, usuario_id):
-            raise BusinessRuleError("Usuário não encontrado", payload=PAYLOAD_PEDIDO)
+class EstoqueInsuficiente(Exception):
+    pass
 
-        produtos = pedido_model.buscar_produtos_para_pedido(
-            conn, {item["produto_id"] for item in itens}
-        )
 
-        total = 0
-        itens_para_gravar = []
-        for item in itens:
-            produto = produtos.get(item["produto_id"])
-            if produto is None:
-                raise BusinessRuleError(
-                    "Produto %s não encontrado" % item["produto_id"], payload=PAYLOAD_PEDIDO
-                )
-            if produto["estoque"] < item["quantidade"]:
-                raise BusinessRuleError(
-                    "Estoque insuficiente para %s" % produto["nome"], payload=PAYLOAD_PEDIDO
-                )
-            total += produto["preco"] * item["quantidade"]
-            itens_para_gravar.append(
-                {
-                    "produto_id": produto["id"],
-                    "produto_nome": produto["nome"],
-                    "quantidade": item["quantidade"],
-                    "preco_unitario": produto["preco"],
-                }
-            )
+def criar_pedido(usuario_id, itens):
+    """Cria pedido, itens e baixa de estoque numa única transação."""
+    if not usuario_model.existe(usuario_id):
+        raise ValidationError("Usuário não encontrado", FALHA)
 
-        try:
-            pedido_id = pedido_model.criar(conn, usuario_id, total, itens_para_gravar)
-        except pedido_model.EstoqueIndisponivel as err:
-            # Perda de corrida com outra requisicao: a transacao foi revertida.
-            raise BusinessRuleError(str(err), payload=PAYLOAD_PEDIDO) from err
+    total = 0
+    linhas = []
+    for item in itens:
+        produto = produto_model.buscar_por_id(item["produto_id"])
+        if produto is None:
+            raise ValidationError("Produto " + str(item["produto_id"]) + " não encontrado", FALHA)
+        if produto["estoque"] < item["quantidade"]:
+            raise ValidationError("Estoque insuficiente para " + produto["nome"], FALHA)
+        total = total + (produto["preco"] * item["quantidade"])
+        linhas.append((produto, item["quantidade"]))
 
-        logger.info("Pedido criado pedido_id=%s itens=%s", pedido_id, len(itens_para_gravar))
-        notification_service["pedido_criado"](pedido_id)
-        return {"pedido_id": pedido_id, "total": total}
+    try:
+        with transaction():
+            pedido_id = pedido_model.criar(usuario_id, total)
+            for produto, quantidade in linhas:
+                pedido_model.adicionar_item(pedido_id, produto["id"], quantidade, produto["preco"])
+                if not produto_model.baixar_estoque(produto["id"], quantidade):
+                    raise EstoqueInsuficiente(produto["nome"])
+    except EstoqueInsuficiente as err:
+        raise ValidationError("Estoque insuficiente para " + str(err), FALHA) from None
 
-    def atualizar_status(conn, pedido_id, novo_status):
-        if not pedido_model.atualizar_status(conn, pedido_id, novo_status):
-            raise NotFoundError("Pedido não encontrado")
-        logger.info("Status alterado pedido_id=%s status=%s", pedido_id, novo_status)
-        notification_service["status_alterado"](pedido_id, novo_status)
+    notification_service.pedido_criado(pedido_id, usuario_id)
+    return {"pedido_id": pedido_id, "total": total}
 
-    def relatorio_vendas(conn):
-        resumo = pedido_model.resumo_vendas(conn)
-        total_pedidos = resumo["total_pedidos"]
-        faturamento = resumo["faturamento"]
-        desconto = pedido_model.desconto_para(faturamento)
-        por_status = resumo["por_status"]
-        return {
-            "total_pedidos": total_pedidos,
-            "faturamento_bruto": round(faturamento, 2),
-            "desconto_aplicavel": round(desconto, 2),
-            "faturamento_liquido": round(faturamento - desconto, 2),
-            "pedidos_pendentes": por_status.get(pedido_model.STATUS_PENDENTE, 0),
-            "pedidos_aprovados": por_status.get(pedido_model.STATUS_APROVADO, 0),
-            "pedidos_cancelados": por_status.get(pedido_model.STATUS_CANCELADO, 0),
-            "ticket_medio": round(faturamento / total_pedidos, 2) if total_pedidos else 0,
-        }
 
-    return {
-        "criar": criar,
-        "atualizar_status": atualizar_status,
-        "relatorio_vendas": relatorio_vendas,
-    }
+def atualizar_status(pedido_id, status):
+    pedido_model.atualizar_status(pedido_id, status)
+    notification_service.status_alterado(pedido_id, status)

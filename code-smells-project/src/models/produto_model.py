@@ -1,91 +1,83 @@
-"""Acesso a dados e regras da entidade produto (P-02, P-03, P-08, P-12)."""
+from src.database import get_db, transaction
 
-# Constantes de dominio: fonte unica para validadores e controllers.
 CATEGORIAS_VALIDAS = ("informatica", "moveis", "vestuario", "geral", "eletronicos", "livros")
 CATEGORIA_PADRAO = "geral"
-NOME_MIN_TAMANHO = 2
-NOME_MAX_TAMANHO = 200
+NOME_MIN = 2
+NOME_MAX = 200
 
-CAMPOS_PUBLICOS = (
-    "id",
-    "nome",
-    "descricao",
-    "preco",
-    "estoque",
-    "categoria",
-    "ativo",
-    "criado_em",
-)
+CAMPOS = ("id", "nome", "descricao", "preco", "estoque", "categoria", "ativo", "criado_em")
 
 
-def serializar(row):
-    """Serializador unico da entidade (evita o mapeamento duplicado do original)."""
-    return {campo: row[campo] for campo in CAMPOS_PUBLICOS}
+def to_dict(row):
+    return {campo: row[campo] for campo in CAMPOS}
 
 
-def listar(conn):
-    rows = conn.execute("SELECT * FROM produtos").fetchall()
-    return [serializar(row) for row in rows]
+def listar():
+    rows = get_db().execute("SELECT * FROM produtos WHERE ativo = 1").fetchall()
+    return [to_dict(row) for row in rows]
 
 
-def buscar_por_id(conn, produto_id):
-    row = conn.execute("SELECT * FROM produtos WHERE id = ?", (produto_id,)).fetchone()
-    return serializar(row) if row else None
+def buscar_por_id(produto_id):
+    row = get_db().execute("SELECT * FROM produtos WHERE id = ? AND ativo = 1", (produto_id,)).fetchone()
+    return to_dict(row) if row else None
 
 
-def buscar(conn, termo=None, categoria=None, preco_min=None, preco_max=None):
-    """Busca com filtros opcionais; apenas fragmentos fixos de SQL sao concatenados."""
-    clausulas = ["1=1"]
-    params = []
+def buscar(termo, categoria=None, preco_min=None, preco_max=None):
+    clauses, params = ["ativo = 1"], []
     if termo:
-        clausulas.append("(nome LIKE ? OR descricao LIKE ?)")
-        params.extend(["%%%s%%" % termo, "%%%s%%" % termo])
+        clauses.append("(nome LIKE ? OR descricao LIKE ?)")
+        params += [f"%{termo}%", f"%{termo}%"]
     if categoria:
-        clausulas.append("categoria = ?")
+        clauses.append("categoria = ?")
         params.append(categoria)
-    if preco_min is not None:
-        clausulas.append("preco >= ?")
+    if preco_min:
+        clauses.append("preco >= ?")
         params.append(preco_min)
-    if preco_max is not None:
-        clausulas.append("preco <= ?")
+    if preco_max:
+        clauses.append("preco <= ?")
         params.append(preco_max)
+    rows = get_db().execute(f"SELECT * FROM produtos WHERE {' AND '.join(clauses)}", params).fetchall()
+    return [to_dict(row) for row in rows]
 
-    sql = "SELECT * FROM produtos WHERE %s" % " AND ".join(clausulas)
-    return [serializar(row) for row in conn.execute(sql, params).fetchall()]
 
-
-def criar(conn, nome, descricao, preco, estoque, categoria):
-    with conn:
-        cursor = conn.execute(
-            "INSERT INTO produtos (nome, descricao, preco, estoque, categoria) "
-            "VALUES (?, ?, ?, ?, ?)",
+def criar(nome, descricao, preco, estoque, categoria):
+    with transaction() as db:
+        cursor = db.execute(
+            "INSERT INTO produtos (nome, descricao, preco, estoque, categoria) VALUES (?, ?, ?, ?, ?)",
             (nome, descricao, preco, estoque, categoria),
         )
     return cursor.lastrowid
 
 
-def atualizar(conn, produto_id, nome, descricao, preco, estoque, categoria):
-    with conn:
-        cursor = conn.execute(
-            "UPDATE produtos SET nome = ?, descricao = ?, preco = ?, estoque = ?, "
-            "categoria = ? WHERE id = ?",
+def atualizar(produto_id, nome, descricao, preco, estoque, categoria):
+    with transaction() as db:
+        db.execute(
+            "UPDATE produtos SET nome = ?, descricao = ?, preco = ?, estoque = ?, categoria = ? "
+            "WHERE id = ? AND ativo = 1",
             (nome, descricao, preco, estoque, categoria, produto_id),
         )
-    return cursor.rowcount > 0
 
 
-def remover(conn, produto_id):
-    with conn:
-        cursor = conn.execute("DELETE FROM produtos WHERE id = ?", (produto_id,))
-    return cursor.rowcount > 0
+def desativar(produto_id):
+    """Exclusão lógica: mantém o produto para o histórico de pedidos."""
+    with transaction() as db:
+        db.execute("UPDATE produtos SET ativo = 0 WHERE id = ?", (produto_id,))
 
 
-def tem_pedidos_vinculados(conn, produto_id):
-    row = conn.execute(
-        "SELECT 1 FROM itens_pedido WHERE produto_id = ? LIMIT 1", (produto_id,)
-    ).fetchone()
-    return row is not None
+def baixar_estoque(produto_id, quantidade):
+    """Decrementa o estoque só se houver saldo; devolve False quando não há."""
+    with transaction() as db:
+        cursor = db.execute(
+            "UPDATE produtos SET estoque = estoque - ? WHERE id = ? AND ativo = 1 AND estoque >= ?",
+            (quantidade, produto_id, quantidade),
+        )
+    return cursor.rowcount == 1
 
 
-def contar(conn):
-    return conn.execute("SELECT COUNT(*) FROM produtos").fetchone()[0]
+def contar_ativos():
+    return get_db().execute("SELECT COUNT(*) FROM produtos WHERE ativo = 1").fetchone()[0]
+
+
+def apagar_todos():
+    with transaction() as db:
+        db.execute("DELETE FROM produtos")

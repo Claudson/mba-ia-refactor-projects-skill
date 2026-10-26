@@ -1,14 +1,13 @@
-"""Validacao de payloads de pedido (P-12)."""
-
 from src.middlewares.error_handler import ValidationError
-from src.models import pedido_model
-
-# Erros de regra de pedido preservam a chave "sucesso" do contrato original.
-PAYLOAD_PEDIDO = {"sucesso": False}
+from src.models.pedido_model import STATUS_VALIDOS
 
 
-def validar_criacao(dados):
-    if not dados:
+def _inteiro(valor):
+    return isinstance(valor, int) and not isinstance(valor, bool)
+
+
+def validar_novo_pedido(dados):
+    if not dados or not isinstance(dados, dict):
         raise ValidationError("Dados inválidos")
 
     usuario_id = dados.get("usuario_id")
@@ -16,25 +15,23 @@ def validar_criacao(dados):
 
     if not usuario_id:
         raise ValidationError("Usuario ID é obrigatório")
+    if not _inteiro(usuario_id):
+        raise ValidationError("Usuario ID inválido")
     if not itens:
         raise ValidationError("Pedido deve ter pelo menos 1 item")
     if not isinstance(itens, list):
-        raise ValidationError("Itens deve ser uma lista")
-
-    normalizados = []
+        raise ValidationError("Itens inválidos")
     for item in itens:
-        if not isinstance(item, dict) or "produto_id" not in item or "quantidade" not in item:
-            raise ValidationError("Cada item precisa de produto_id e quantidade")
-        quantidade = item["quantidade"]
-        if not isinstance(quantidade, int) or isinstance(quantidade, bool) or quantidade <= 0:
-            raise ValidationError("Quantidade deve ser um inteiro maior que zero")
-        normalizados.append({"produto_id": item["produto_id"], "quantidade": quantidade})
+        if not isinstance(item, dict) or not _inteiro(item.get("produto_id")):
+            raise ValidationError("Item inválido: produto_id é obrigatório")
+        if not _inteiro(item.get("quantidade")) or item["quantidade"] <= 0:
+            raise ValidationError("Item inválido: quantidade deve ser um inteiro maior que zero")
 
-    return {"usuario_id": usuario_id, "itens": normalizados}
+    return usuario_id, [{"produto_id": i["produto_id"], "quantidade": i["quantidade"]} for i in itens]
 
 
 def validar_status(dados):
-    novo_status = (dados or {}).get("status", "")
-    if novo_status not in pedido_model.STATUS_VALIDOS:
+    status = dados.get("status", "") if isinstance(dados, dict) else ""
+    if status not in STATUS_VALIDOS:
         raise ValidationError("Status inválido")
-    return novo_status
+    return status

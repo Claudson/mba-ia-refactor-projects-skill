@@ -1,6 +1,6 @@
 # code-smells-project
 
-API de E-commerce em Python/Flask, refatorada para MVC em camadas pela skill `refactor-arch`.
+API de E-commerce em Python/Flask usada como entrada do desafio `refactor-arch`.
 
 ## Como rodar
 
@@ -9,58 +9,36 @@ pip install -r requirements.txt
 python app.py
 ```
 
-O comando de execução é o mesmo de antes. A aplicação sobe em `http://127.0.0.1:5000` (o bind
-deixou de ser `0.0.0.0` por padrão) e o banco SQLite (`loja.db`) é criado automaticamente no
-primeiro boot, já com produtos e usuários de exemplo.
+A aplicação sobe em `http://localhost:5000`. O banco SQLite (`loja.db`) é criado automaticamente no primeiro boot, já com produtos e usuários de exemplo (senhas gravadas com hash).
 
 ## Configuração
 
-Toda a configuração vem de variáveis de ambiente — veja `.env.example` para a lista completa.
-Nenhuma variável é obrigatória para subir a aplicação:
+Toda a configuração vem de variáveis de ambiente (veja `.env.example`); todas têm default seguro:
 
-| Variável | Default | Observação |
+| Variável | Default | Uso |
 |---|---|---|
-| `SECRET_KEY` | chave efêmera | gerada no boot com warning se ausente |
-| `FLASK_DEBUG` | `false` | nunca ligar em produção |
-| `HOST` / `PORT` | `127.0.0.1` / `5000` | |
-| `DATABASE_PATH` | `loja.db` | |
-| `LOG_LEVEL` | `INFO` | |
-| `ADMIN_TOKEN` | *(vazio)* | sem ele, `/admin/*` responde 403 |
-| `CORS_ORIGINS` | *(vazio)* | sem ele, CORS fica desabilitado |
+| `SECRET_KEY` | gerada a cada boot | chave de assinatura do Flask |
+| `ADMIN_TOKEN` | — (admin desabilitado) | valor exigido no header `X-Admin-Token` de `POST /admin/reset-db` |
+| `DEBUG` | `false` | debugger do Werkzeug |
+| `HOST` / `PORT` | `127.0.0.1` / `5000` | endereço do servidor |
+| `DATABASE_PATH` | `loja.db` | arquivo SQLite |
+| `CORS_ORIGINS` | `http://localhost:5000,http://127.0.0.1:5000` | origens liberadas para CORS |
+| `LOG_LEVEL` | `INFO` | nível do log |
 
-Exemplo habilitando os endpoints administrativos (PowerShell):
-
-```powershell
-$env:ADMIN_TOKEN = "um-token-qualquer"; python app.py
-```
-
-As rotas `/admin/reset-db` e `/admin/query` exigem o header `X-Admin-Token` com esse valor, e
-`/admin/query` aceita apenas um único `SELECT`, executado em conexão somente leitura.
-
-## Usuários de exemplo
-
-As senhas do seed são gravadas com hash (`werkzeug.security`). Credenciais para teste:
-
-| Email | Senha | Tipo |
-|---|---|---|
-| `admin@loja.com` | `admin123` | admin |
-| `joao@email.com` | `123456` | cliente |
-| `maria@email.com` | `senha123` | cliente |
-
-Um `loja.db` criado pela versão anterior guarda senhas em texto puro e não funciona com o login
-atual — apague o arquivo para que o seed seja recriado com hash.
+Exemplo (bash): `ADMIN_TOKEN=meu-token python app.py` e depois
+`curl -X POST -H "X-Admin-Token: meu-token" http://localhost:5000/admin/reset-db`.
 
 ## Estrutura
 
 ```
-app.py                      entry point (lê settings e sobe o servidor)
-src/app.py                  composition root (create_app)
-src/config/settings.py      configuração por variável de ambiente
-src/database.py             conexão por requisição, schema (com FKs) e seed
-src/models/                 acesso a dados por entidade (SQL parametrizado) + regras da entidade
-src/services/               fluxos com várias entidades (pedido transacional, relatório, notificações)
-src/validators/             validação de payloads (fonte única para criar/atualizar)
-src/controllers/            casos de uso, sem conhecer HTTP
-src/views/                  blueprints Flask (apenas HTTP)
-src/middlewares/            handler de erros central e guard de admin
+app.py              entry point
+src/app.py          create_app() — composition root
+src/config/         configuração via variáveis de ambiente
+src/database.py     conexão por requisição, transações, schema e seed
+src/models/         acesso a dados por entidade (produto, usuario, pedido)
+src/validators/     validação dos payloads
+src/services/       fluxos de pedido, relatório, notificação e admin
+src/controllers/    casos de uso por recurso
+src/views/          Blueprints (rotas HTTP)
+src/middlewares/    tratamento de erros centralizado e guard de admin
 ```
