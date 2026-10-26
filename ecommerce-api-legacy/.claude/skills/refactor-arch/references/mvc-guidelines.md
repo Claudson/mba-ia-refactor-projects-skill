@@ -103,12 +103,20 @@ Mantenha scripts auxiliares (seed, migrações) funcionando: atualize seus impor
 Preserve: paths, métodos, nomes dos campos de requisição, status codes de sucesso/erro, chaves
 de primeiro nível das respostas e textos das mensagens de erro.
 
+**O relatório da Fase 2 é a especificação da Fase 3.** Quando um finding recomenda uma mudança
+de contrato (remover uma rota, exigir credencial, tirar um campo), ela é aplicada exatamente como
+recomendada — a preservação do contrato vale para todo o resto. Nenhuma regra desta seção
+autoriza manter, "suavizar" ou trocar por outra solução algo que a auditoria mandou remover.
+
 Mudanças **intencionais** permitidas (devem ser listadas no resumo da Fase 3):
 1. Remover campos secretos/sensíveis das respostas (`password`, `senha`, `secret_key`, hashes).
-2. Proteger endpoints perigosos (admin/reset/SQL bruto) com um token de admin vindo da config
-   (header `X-Admin-Token`) → `401/403` sem ele. Consoles de SQL bruto também ficam restritos a
-   `SELECT` somente leitura. Nunca apague silenciosamente um endpoint original.
-3. Transformar crashes (500 em entrada inválida) em respostas `400`/`404` adequadas.
-4. Substituir comportamento falso/inseguro (tokens falsos, hash fraco) por um equivalente seguro
+2. **Remover endpoints de execução arbitrária** (SQL, código ou comando vindos da requisição),
+   quando o finding recomendar (catálogo AP-05, playbook P-13a). A rota deixa de ser registrada
+   (`404`/`405`), sem versão "restrita". Nenhum outro endpoint pode ser removido, e nenhuma
+   remoção pode acontecer sem um finding que a recomende.
+3. Proteger operações administrativas legítimas (reset, relatórios internos, exclusões) com um
+   token de admin vindo da config (header `X-Admin-Token`) → `401/403` sem ele (playbook P-13b).
+4. Transformar crashes (500 em entrada inválida) em respostas `400`/`404` adequadas.
+5. Substituir comportamento falso/inseguro (tokens falsos, hash fraco) por um equivalente seguro
    que mantenha as mesmas chaves de resposta.
-5. Corrigir bugs de integridade de dados (ex.: exclusão em cascata) sem mudar a resposta.
+6. Corrigir bugs de integridade de dados (ex.: exclusão em cascata) sem mudar a resposta.

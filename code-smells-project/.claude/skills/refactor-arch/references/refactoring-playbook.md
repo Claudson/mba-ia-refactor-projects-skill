@@ -18,7 +18,7 @@ na ordem da seção *Ordem de execução* no final.
 | P-10 Tratamento de erros centralizado | AP-15, AP-04 |
 | P-11 Substituir APIs deprecated | AP-DEP |
 | P-12 Fonte única (validadores, constantes, regras no model) | AP-13, AP-14, AP-18, AP-21 |
-| P-13 Proteger endpoints perigosos | AP-05 |
+| P-13 Remover (P-13a) ou proteger (P-13b) endpoints perigosos | AP-05 |
 | P-14 Logger em vez de print | AP-17 |
 
 ---
@@ -374,10 +374,12 @@ def register_error_handlers(app, error_key="erro"):
     def handle_app_error(err):
         return jsonify({error_key: err.message, **err.payload}), err.status
 
+    @app.errorhandler(HTTPException)               # 404/405/400 do próprio Flask → mesmo formato da API
+    def handle_http_exception(err):
+        return jsonify({error_key: err.description}), err.code
+
     @app.errorhandler(Exception)
     def handle_unexpected(err):
-        if isinstance(err, HTTPException):          # mantém os 404/405 do Flask
-            return err
         app.logger.exception("Erro não tratado")
         return jsonify({error_key: "Erro interno do servidor"}), 500
 ```
@@ -385,12 +387,20 @@ def register_error_handlers(app, error_key="erro"):
 ```js
 const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 class AppError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
+function notFoundHandler(req, res) {                // depois das rotas: rota inexistente no formato da API
+  res.status(404).send('Not Found');
+}
 function errorHandler(err, req, res, next) {        // registrado por último
   if (err instanceof AppError) return res.status(err.status).send(err.message);   // mantém o formato original
+  if (err.status >= 400 && err.status < 500) return res.status(err.status).send('Bad Request');  // ex.: JSON malformado
   logger.error(err); res.status(500).send('Erro interno');
 }
 ```
 Mantenha a chave de erro original do projeto (`erro`/`error`) e o formato do corpo (JSON vs texto).
+**Todo** erro — inclusive rota inexistente (404), método não permitido (405) e corpo malformado
+(400) gerados pelo próprio framework — passa pelo handler central e sai nesse formato; a API nunca
+devolve a página HTML padrão do framework. Se a recomendação da Fase 2 citar esses casos, a
+validação deve testá-los (ex.: `GET /rota-inexistente` → 404 em JSON).
 
 ---
 
@@ -455,13 +465,47 @@ apague imports não usados e helpers mortos.
 
 ---
 
-## P-13 — Proteger endpoints perigosos
+## P-13 — Remover ou proteger endpoints perigosos
+
+Aplique a variante que o finding recomendou (catálogo AP-05). Nunca troque uma pela outra na
+Fase 3: se o relatório diz "remover", a rota sai.
+
+### P-13a — Remover endpoint de execução arbitrária
 
 **Antes**
 ```python
 @app.route("/admin/query", methods=["POST"])
 def executar_query():
     cursor.execute(request.get_json()["sql"])          # SQL arbitrário, sem autenticação
+```
+**Depois** — a rota, o handler e todo código que só existia para ela são apagados (sem
+substituto "restrito a SELECT", sem flag para reativar):
+```python
+# views/admin_routes.py — só o que tem uso legítimo permanece
+@admin_bp.post("/admin/reset-db")
+@require_admin
+def reset_database():
+    return jsonify(admin_controller.reset_db()), 200
+# (POST /admin/query não é mais registrada → o Flask responde 404/405)
+```
+```js
+// antes: app.post('/debug/eval', (req, res) => res.json(eval(req.body.code)));
+// depois: a rota deixa de existir em routes/ — nenhum handler equivalente
+```
+Consequências obrigatórias:
+- listar a remoção em *Intentional Contract Changes* (`POST /admin/query → removido → F0x`);
+- no baseline/validação, o resultado esperado da rota removida passa a ser `404`/`405`;
+- atualizar README / exemplos de requisição que citavam a rota;
+- se uma necessidade real existir (ex.: relatório ad hoc), ela vira um endpoint específico e
+  parametrizado, nunca um console genérico.
+
+### P-13b — Proteger operação administrativa legítima
+
+**Antes**
+```python
+@app.route("/admin/reset-db", methods=["POST"])
+def reset_database():
+    ...  # apaga todas as tabelas, sem autenticação
 ```
 **Depois**
 ```python
@@ -478,11 +522,10 @@ def require_admin(view):
     return wrapper
 
 # views/admin_routes.py
-@admin_bp.post("/admin/query")
+@admin_bp.post("/admin/reset-db")
 @require_admin
-def executar_query():
-    return jsonify(admin_controller.run_read_only_query(request.get_json(silent=True))), 200
-# controller: aceita apenas um único SELECT, executado numa conexão somente leitura
+def reset_database():
+    return jsonify(admin_controller.reset_db()), 200
 ```
 Tokens falsos (`'fake-jwt-token-' + id`) → token assinado (`itsdangerous` já vem com o Flask;
 `crypto.createHmac` no Node), mantendo a mesma chave na resposta.
@@ -508,7 +551,7 @@ Configure o logger uma única vez no composition root (nível vindo da config).
 2. Módulo de banco/conexão (**P-06**) e models por entidade (**P-03**, **P-02**, **P-05**, **P-07**, **P-08**, **P-11**, **P-12**)
 3. Services para fluxos com várias entidades (**P-09**)
 4. Controllers (**P-04**, validadores **P-12**)
-5. Views/routes (finas) + guards (**P-13**)
+5. Views/routes (finas) + remoção ou guards (**P-13a/P-13b**)
 6. Handler de erros + logger (**P-10**, **P-14**)
 7. Composition root + entry point; atualizar scripts de seed/README; apagar arquivos antigos
 8. Validar (SKILL.md § 3.4)

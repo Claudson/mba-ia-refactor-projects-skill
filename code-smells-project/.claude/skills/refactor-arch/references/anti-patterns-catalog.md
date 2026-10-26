@@ -68,7 +68,17 @@ autenticação; autenticação falsa.
 - **Sinais:** rotas como `/admin/*`, `/reset`, `/query`, `/exec`, `/debug` sem verificação de
   auth; `cursor.execute(request...['sql'])`; `eval(`/`exec(` sobre entrada; tokens como
   `'fake-jwt-token-' + id`; rotas `DELETE` destrutivas sem checagem de dono/perfil.
-- **Correção:** **P-13** (proteger endpoints perigosos).
+- **Correção — decida pelo tipo de endpoint e recomende exatamente isso no relatório:**
+  - **Execução arbitrária** (o corpo/query da requisição vira SQL, código, comando de shell ou
+    expressão avaliada — mesmo que "só SELECT"): **remover o endpoint**. Não existe versão segura de
+    um console de execução exposto por HTTP; autenticação e filtros de `SELECT` não impedem
+    exfiltração. → **P-13a**.
+  - **Operação administrativa legítima** (reset de dados, relatório interno, exclusão): manter a
+    rota e **proteger** com credencial vinda da config. → **P-13b**.
+  - **Autenticação falsa** (token previsível/não verificado): substituir por token assinado,
+    mantendo a chave da resposta. → **P-13b**.
+  - Se um mesmo finding cobre endpoints dos dois tipos, a recomendação deve dizer, rota a rota,
+    qual é removida e qual é protegida.
 
 ### AP-06 — God Class / God Module
 Uma única classe ou módulo com várias responsabilidades: conexão + schema + seed + roteamento +

@@ -45,6 +45,12 @@ Leia cada arquivo **por completo** no início da fase correspondente. Não confi
 7. **Idioma.** Os rótulos fixos dos blocos de saída e do template de relatório ficam em inglês,
    exatamente como escritos (padrão do enunciado). Todo o texto livre — descrições, impactos,
    recomendações, planos e explicações — em português (pt-BR).
+8. **O relatório é a especificação da Fase 3.** Cada *Recommendation* da Fase 2 deve ser uma ação
+   concreta que o playbook sabe executar, e a Fase 3 a aplica **por inteiro, como escrita**. Se
+   uma referência parecer indicar outra coisa, vale o relatório. Se, ao refatorar, você concluir
+   que a recomendação não deve ser seguida, não a substitua por outra solução: deixe o finding
+   como `✗ NÃO RESOLVIDO` (ou `◐ PARCIAL`) no resumo, com o motivo. Um finding só conta como
+   resolvido quando tudo o que a recomendação pede foi feito.
 
 ---
 
@@ -129,11 +135,16 @@ Leia primeiro `references/mvc-guidelines.md` e `references/refactoring-playbook.
 ### 3.2 Plano
 Escolha a estratégia em `mvc-guidelines.md` § Estratégia (monolito → extração completa;
 parcialmente em camadas → reorganização no lugar). Imprima um plano curto: árvore alvo + quais
-findings cada passo resolve. Não peça confirmação de novo — o usuário já confirmou.
+findings cada passo resolve, citando para cada finding a ação pedida pela *Recommendation*
+(ex.: "F05 → remover POST /admin/query (P-13a); proteger POST /admin/reset-db (P-13b)"). Se o plano
+divergir de alguma recomendação, corrija o plano — não o relatório. Não peça confirmação de novo —
+o usuário já confirmou.
 
 ### 3.3 Execução
 Aplique as transformações do playbook para **todos** os findings CRITICAL e HIGH, e para os
-MEDIUM/LOW nos arquivos que você tocar. Trabalhe camada por camada: config → models →
+MEDIUM/LOW nos arquivos que você tocar — implementando a *Recommendation* de cada finding como
+está no relatório (regra global 8): o que ela manda remover é removido, o que manda proteger é
+protegido. Trabalhe camada por camada: config → models →
 controllers (+services) → views/routes → middlewares/tratamento de erros → composition root/entry
 point. Apague os arquivos antigos depois que o conteúdo tiver sido movido (sem duplicatas mortas).
 Atualize as instruções de execução do README do projeto se os comandos mudarem e crie um
@@ -141,12 +152,21 @@ Atualize as instruções de execução do README do projeto se os comandos mudar
 
 ### 3.4 Validação
 1. Suba a aplicação refatorada com o mesmo comando → deve iniciar sem erros/tracebacks.
-2. Repita exatamente as chamadas do baseline. Todos os endpoints devem responder; status codes e
-   formato das respostas devem bater com o baseline, exceto mudanças de contrato intencionais e listadas.
-3. Re-escaneie o código novo com os sinais de detecção do catálogo → nenhum CRITICAL/HIGH pode
+2. Repita exatamente as chamadas do baseline. Todos os endpoints mantidos devem responder; status
+   codes e formato das respostas devem bater com o baseline, exceto mudanças de contrato
+   intencionais e listadas. Rotas removidas por recomendação da auditoria devem responder `404`/`405`.
+3. **Confira a aderência ao relatório, finding a finding:** releia cada *Recommendation* e verifique
+   no código novo que tudo o que ela pede foi feito (rota removida não está mais registrada, campo
+   sensível não aparece na resposta, credencial é exigida etc.). Divergência = corrigir o código
+   ou marcar o finding como `✗`/`◐` no resumo. Toda recomendação com efeito observável precisa de
+   uma chamada HTTP que a comprove — não marque `✓` só por ler o código. Ex.: rota removida →
+   `404` **no formato de erro da API**; handler central de erros → uma rota inexistente e um método
+   não permitido também saem nesse formato (nunca a página HTML do framework); campo removido →
+   ausente na resposta; credencial exigida → `401/403` sem ela e sucesso com ela.
+4. Re-escaneie o código novo com os sinais de detecção do catálogo → nenhum CRITICAL/HIGH pode
    restar; liste os MEDIUM/LOW remanescentes com justificativa.
-4. Se algo falhar: corrija e revalide (até 3 rodadas). Nunca reporte sucesso que você não observou.
-5. Pare a aplicação e todos os processos que você iniciou.
+5. Se algo falhar: corrija e revalide (até 3 rodadas). Nunca reporte sucesso que você não observou.
+6. Pare a aplicação e todos os processos que você iniciou.
 
 ### 3.5 Relatório
 Imprima exatamente (rótulos em inglês, conteúdo em português):
@@ -162,7 +182,8 @@ PHASE 3: REFACTORING COMPLETE
 <árvore do novo layout, com o papel de cada arquivo em uma linha>
 
 ## Findings Resolved
-<ID / título → o que foi feito> (uma linha cada; marque os não resolvidos e o motivo)
+<✓|◐|✗ ID / título → recomendação da Fase 2 → o que foi feito> (uma linha por finding;
+ ✓ = recomendação aplicada por inteiro, ◐ = parcial, ✗ = não resolvido — com o motivo)
 
 ## Intentional Contract Changes
 <endpoint → mudança → motivo>  (ou "Nenhuma")
@@ -171,5 +192,6 @@ PHASE 3: REFACTORING COMPLETE
   ✓|✗ Application boots without errors (<comando>)
   ✓|✗ All endpoints respond (<ok>/<total>) — tabela MÉTODO PATH antes → depois
   ✓|✗ No CRITICAL/HIGH anti-patterns remaining
+  ✓|✗ Every finding matches its Phase 2 recommendation (<n>/<total>)
 ================================
 ```
